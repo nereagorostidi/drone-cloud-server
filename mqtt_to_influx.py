@@ -1,22 +1,28 @@
 import json
+import os
 import paho.mqtt.client as mqtt
 from influxdb_client import InfluxDBClient, Point, WritePrecision
 from influxdb_client.client.write_api import SYNCHRONOUS
+from dotenv import load_dotenv
+
+# Cargar variables del .env
+load_dotenv()
 
 # --- CONFIGURACIÓN INFLUXDB ---
-INFLUX_URL = "http://localhost:8086"
-INFLUX_TOKEN = "ZMCC28Lya9GsUyAqj4SYST5QQ6zfA7WVys0HxzefGp09ESHffXBcT0fy_yQAomULdTWoHhE4dkjjtq-L3mLWjQ=="
-INFLUX_ORG = "sar-drone"
-INFLUX_BUCKET = "sensores"
+INFLUX_URL = os.getenv("INFLUX_URL")
+INFLUX_TOKEN = os.getenv("INFLUX_TOKEN")
+INFLUX_ORG = os.getenv("INFLUX_ORG")
+INFLUX_BUCKET = os.getenv("INFLUX_BUCKET")
 
 # Inicializar cliente de InfluxDB
 influx_client = InfluxDBClient(url=INFLUX_URL, token=INFLUX_TOKEN, org=INFLUX_ORG)
 write_api = influx_client.write_api(write_options=SYNCHRONOUS)
 
 # --- CONFIGURACIÓN MQTT ---
-MQTT_BROKER = "localhost"  # Está en la misma máquina
-MQTT_PORT = 1883
-MQTT_TOPIC = "casa/salon/sensores"
+
+MQTT_BROKER = os.getenv("MQTT_BROKER", "localhost")
+MQTT_PORT = int(os.getenv("MQTT_PORT", 1883))
+MQTT_TOPIC = os.getenv("MQTT_TOPIC")
 
 # Callback cuando nos conectamos a Mosquitto
 def on_connect(client, userdata, flags, rc, properties=None):
