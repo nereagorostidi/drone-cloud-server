@@ -7,9 +7,9 @@ Wants=network-online.target
 Type=simple
 User=ubuntu
 Group=ubuntu
-WorkingDirectory=/home/ubuntu
+WorkingDirectory=/home/ubuntu/drone-cloud-server
 Environment=PYTHONUNBUFFERED=1
-ExecStart=/home/ubuntu/env/bin/python /home/ubuntu/mqtt_to_influx.py
+ExecStart=/home/ubuntu/env/bin/python /home/ubuntu/drone-cloud-server/mqtt_to_influx.py
 Restart=on-failure
 RestartSec=5
 
