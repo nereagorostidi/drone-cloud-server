@@ -1,0 +1,22 @@
+# Entornos virtuales
+env/
+venv/
+*.egg-info/
+__pycache__/
+*.pyc
+
+# Credenciales y config local
+.env
+*.pem
+*.key
+
+# Logs y bases de datos locales
+*.log
+*.db
+*.sqlite
+
+# Editor
+.vscode/
+.idea/
+*.swp
+.DS_Store
