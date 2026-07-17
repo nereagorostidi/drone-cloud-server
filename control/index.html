@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<!-- Declara que este documento es HTML5 (la versión actual). Siempre en la 1ª línea. -->
+
+<html lang="es">
+<!-- Elemento raíz. lang="es" indica que el contenido está en español
+     (ayuda a buscadores y a lectores de pantalla). -->
+
+<head>
+<!-- La "cabeza": información sobre la página que NO se ve directamente
+     (título, codificación, enlaces a estilos y fuentes). -->
+
+  <meta charset="UTF-8">
+  <!-- Codificación de caracteres. UTF-8 permite tildes, ñ, etc. sin que salgan símbolos raros. -->
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Hace que la página se adapte al ancho del móvil (diseño responsive).
+       Sin esto, en el móvil se vería diminuta. -->
+
+  <title>Drone-SAR · Control</title>
+  <!-- El texto que aparece en la pestaña del navegador. -->
+
+  <!-- Precarga de las fuentes de Google (mejora un poco la velocidad de descarga). -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <!-- Descarga las tres tipografías que usa la página (Space Grotesk, Inter, JetBrains Mono). -->
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- AQUÍ está la clave de la separación: en vez de un bloque <style> con todo
+       el CSS dentro, enlazamos un fichero externo 'estilos.css'.
+       El navegador lo descarga y aplica los estilos desde ahí.
+       'estilos.css' debe estar en la MISMA carpeta que este control.html. -->
+  <link rel="stylesheet" href="estilos.css">
+
+</head>
+
+<body>
+<!-- El "cuerpo": todo lo que SÍ se ve en la página. -->
+
+  <!-- Contenedor central. La clase "wrap" se define en el CSS para centrar
+       el contenido y limitar su ancho. -->
+  <div class="wrap">
+
+    <!-- Encabezado de la página -->
+    <div class="eyebrow">TFG · Drone-SAR</div>   <!-- pequeño texto superior en naranja -->
+    <h1>Control <span class="sar">·</span> dron</h1>  <!-- título; el <span> colorea el punto -->
+    <div class="sub">Panel de teleoperación (simulación)</div>  <!-- subtítulo -->
+
+    <!-- ============ GRUPO: MOTORES ============ -->
+    <!-- Cada "grupo" es una sección de botones con su título. -->
+    <div class="grupo">
+      <h2>Motores</h2>
+      <div class="fila">
+        <!-- onclick="enviar('arm')" -> al pulsar, llama a la función JavaScript
+             'enviar' (definida abajo) con el comando 'arm'. -->
+        <button class="b-ok" onclick="enviar('arm')">Armar</button>
+        <button class="b-danger" onclick="enviar('disarm')">Desarmar</button>
+      </div>
+    </div>
+
+    <!-- ============ GRUPO: DESPEGUE ============ -->
+    <div class="grupo">
+      <h2>Despegue</h2>
+      <div class="takeoff">
+        <!-- Campo numérico para escribir la altitud. id="alt" permite que
+             el JavaScript lea su valor. value="20" es el valor inicial. -->
+        <input id="alt" type="number" value="20" min="1" max="120" aria-label="Altitud en metros">
+        <!-- Este botón llama a 'despegar()', que lee la altitud y la envía. -->
+        <button class="b-ok" style="flex:1" onclick="despegar()">Despegar (m)</button>
+      </div>
+    </div>
+
+    <!-- ============ GRUPO: NAVEGACIÓN ============ -->
+    <div class="grupo">
+      <h2>Navegación</h2>
+      <div class="fila">
+        <button class="b-neutral" onclick="enviar('start_mission')">Iniciar misión</button>
+        <button class="b-neutral" onclick="enviar('hold')">Mantener</button>
+      </div>
+    </div>
+
+    <!-- ============ GRUPO: REGRESO ============ -->
+    <div class="grupo">
+      <h2>Regreso</h2>
+      <div class="fila">
+        <button class="b-neutral" onclick="enviar('land')">Aterrizar</button>
+        <button class="b-neutral" onclick="enviar('rtl')">Volver a casa (RTL)</button>
+      </div>
+    </div>
+
+    <!-- Registro de comandos: aquí el JavaScript irá escribiendo lo que se envía
+         y las respuestas. Empieza con un texto gris de aviso. -->
+    <div class="log" id="log"><span class="t">Registro de comandos…</span></div>
+
+  </div>
+
+  <!-- ============ JAVASCRIPT (la lógica de los botones) ============ -->
+  <!-- El <script> contiene el código que se ejecuta en el navegador cuando
+       pulsas los botones. Es lo que convierte un clic en una petición a la API. -->
+  <script>
+
+    // === CONFIGURA AQUÍ la dirección de tu API ===
+    // Es la URL base a la que se enviarán los comandos.
+    // - En LOCAL o con el puerto abierto: la IP del EC2 + puerto 5000.
+    // - Si algún día sirves por HTTPS con reverse proxy: cambia esto a "/api".
+    const API_BASE = "http://51.48.220.143:5000/api";
+
+    // Guardamos una referencia al recuadro del registro para escribir en él.
+    const log = document.getElementById('log');
+
+    // Función auxiliar: añade una línea al registro con la hora.
+    // 'texto' es lo que se escribe; 'clase' le da color (ok, error, comando).
+    function anota(texto, clase){
+      const hora = new Date().toLocaleTimeString();   // hora actual (hh:mm:ss)
+      const linea = document.createElement('div');     // crea una línea nueva
+      linea.innerHTML = `<span class="t">${hora}</span> <span class="${clase}">${texto}</span>`;
+      log.prepend(linea);   // la añade ARRIBA del todo (lo más reciente primero)
+    }
+
+    // Función principal: envía un comando a la API.
+    // 'command' es la acción (arm, disarm...); 'extra' son datos opcionales (p. ej. altitud).
+    async function enviar(command, extra){
+      // Junta el comando con los datos extra en un solo objeto.
+      const cuerpo = Object.assign({command}, extra || {});
+      anota(`→ ${command}`, 'l-cmd');   // deja constancia en el registro
+
+      try {
+        // fetch = hace la petición HTTP a la API (POST al endpoint /command).
+        const r = await fetch(`${API_BASE}/command`, {
+          method: 'POST',                                  // método POST (enviar datos)
+          headers: {'Content-Type': 'application/json'},   // avisamos de que enviamos JSON
+          body: JSON.stringify(cuerpo)                     // convertimos el objeto a texto JSON
+        });
+        const data = await r.json();   // leemos la respuesta de la API (también JSON)
+
+        // Según lo que responda la API, anotamos éxito o error.
+        if (data.ok){ anota(`✓ ${command} enviado`, 'l-ok'); }
+        else { anota(`✗ ${data.error || 'error'}`, 'l-err'); }
+
+      } catch(e){
+        // Si ni siquiera se pudo conectar con la API (apagada, puerto cerrado...).
+        anota(`✗ sin conexión con la API`, 'l-err');
+      }
+    }
+
+    // Función del botón "Despegar": lee la altitud del campo y la envía.
+    function despegar(){
+      const alt = parseFloat(document.getElementById('alt').value);  // lee el número
+      if (isNaN(alt)){ anota('✗ altitud no válida', 'l-err'); return; }  // valida
+      enviar('takeoff', {altitude: alt});   // envía takeoff con la altitud como dato extra
+    }
+
+  </script>
+
+</body>
+</html>

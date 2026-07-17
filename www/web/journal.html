@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Drone-SAR · Diario de tareas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F5F7FA;--surface:#FFFFFF;--ink:#0F1E2E;--slate:#5A6B7B;
+    --line:#E2E7EC;--line-strong:#CDD6DF;
+    --signal:#FF6A13;--signal-soft:#FFF1E8;
+    --done:#1F9D6B;--done-soft:#E7F5EF;
+    --sky:#0E7490;--sky-soft:#E4F2F5;
+    --display:"Space Grotesk",system-ui,sans-serif;
+    --body:"Inter",system-ui,sans-serif;
+    --mono:"JetBrains Mono",ui-monospace,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--ink);font-family:var(--body);line-height:1.6;-webkit-font-smoothing:antialiased;padding:0 20px}
+  .wrap{max-width:1200px;margin:0 auto}
+
+  .statusbar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;font-family:var(--mono);font-size:12px;letter-spacing:.04em;color:var(--slate);border-bottom:1px solid var(--line);padding:16px 2px}
+  .statusbar .live{display:flex;align-items:center;gap:7px;color:var(--ink);font-weight:500}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--done);position:relative}
+  .dot::after{content:"";position:absolute;inset:-4px;border-radius:50%;background:var(--done);opacity:.35;animation:ping 2s ease-out infinite}
+  @keyframes ping{0%{transform:scale(.6);opacity:.5}100%{transform:scale(2.4);opacity:0}}
+  .statusbar .sep{color:var(--line-strong)}
+  .nav{margin-left:auto;display:flex;gap:6px}
+  .nav a{font-family:var(--mono);font-size:12px;text-decoration:none;padding:5px 12px;border-radius:6px;letter-spacing:.03em;color:var(--slate);border:1px solid var(--line);transition:.15s}
+  .nav a:hover{color:var(--ink);border-color:var(--line-strong)}
+  .nav a.here{background:var(--ink);color:#fff;border-color:var(--ink)}
+
+  header{padding:44px 0 36px}
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--signal);font-weight:600;margin-bottom:14px}
+  h1{font-family:var(--display);font-weight:700;font-size:clamp(2rem,6vw,3.1rem);line-height:1.05;letter-spacing:-.02em;margin-bottom:16px}
+  h1 .sar{color:var(--signal)}
+  .lede{font-size:1.05rem;color:var(--slate);max-width:62ch}
+  .meta{margin-top:22px;display:flex;gap:22px;flex-wrap:wrap;font-family:var(--mono);font-size:12.5px;color:var(--slate)}
+  .meta b{color:var(--ink);font-weight:600}
+
+  .log{position:relative;padding:8px 0 40px 0}
+  .phase{position:relative;padding:0 0 30px 34px}
+  .phase::before{content:"";position:absolute;left:7px;top:8px;bottom:-6px;width:2px;background:var(--line)}
+  .phase:last-child::before{display:none}
+  .phase::after{content:"";position:absolute;left:0;top:5px;width:16px;height:16px;border-radius:50%;background:var(--surface);border:2px solid var(--signal)}
+  .phase-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:6px}
+  .phase-date{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#fff;background:var(--ink);border-radius:5px;padding:3px 10px;font-weight:500}
+
+  ul.tasks{list-style:none;margin-top:8px}
+  ul.tasks > li{position:relative;padding:10px 0 10px 26px;border-bottom:1px solid var(--line);font-size:.98rem}
+  ul.tasks > li:last-child{border-bottom:none}
+  ul.tasks > li::before{content:"";position:absolute;left:2px;top:17px;width:9px;height:9px;border-radius:2px;background:var(--done-soft);border:1.5px solid var(--done)}
+  ul.tasks > li b{font-weight:600}
+
+  ul.sub{list-style:none;margin:7px 0 2px 0}
+  ul.sub li{position:relative;padding:4px 0 4px 20px;font-size:.92rem;color:var(--slate)}
+  ul.sub li::before{content:"▸";position:absolute;left:0;top:4px;color:var(--signal);font-size:.85rem}
+  ul.sub li b{color:var(--ink);font-weight:600}
+  ul.sub ul.sub li::before{content:"–";color:var(--slate)}
+
+  a.link{color:var(--sky);text-decoration:none;font-family:var(--mono);font-size:.85em;word-break:break-all;border-bottom:1px solid var(--sky-soft)}
+  a.link:hover{border-color:var(--sky)}
+  code{font-family:var(--mono);font-size:.85em;background:#F2F2F2;color:var(--ink);padding:1px 6px;border-radius:4px;border:1px solid var(--line)}
+  .cost{font-family:var(--mono);font-size:.82em;color:var(--signal);font-weight:500;white-space:nowrap}
+
+  footer{border-top:1px solid var(--line);padding:26px 2px 60px;font-family:var(--mono);font-size:12px;color:var(--slate);line-height:1.7}
+
+  .estado{background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--signal);border-radius:12px;padding:24px 28px;margin-bottom:44px}
+  .estado-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+  .estado-head h2{font-family:var(--display);font-weight:600;font-size:1.35rem;letter-spacing:-.01em}
+  .estado-head .fecha{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#fff;background:var(--signal);border-radius:5px;padding:3px 9px}
+  .estado p{font-size:.98rem;color:#33414f;line-height:1.7;margin-bottom:12px}
+  .estado p:last-child{margin-bottom:0}
+  .estado p b{color:var(--ink);font-weight:600}
+
+  @media (max-width:520px){.meta{gap:14px}.nav{width:100%;margin-left:0;margin-top:8px}}
+  @media (prefers-reduced-motion:reduce){.dot::after{animation:none}html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="statusbar">
+    <span class="live"><span class="dot"></span>SISTEMA OPERATIVO</span>
+    <span class="sep">·</span>
+    <span>ÚLT. ACTUALIZACIÓN: 16/07/2026</span>
+    <nav class="nav">
+      <a href="journal.html" class="here">Diario</a>
+      <a href="todo.html">Pendientes</a>
+    </nav>
+  </div>
+
+  <header>
+    <div class="eyebrow">TFG · Ingeniería de Telecomunicación · UC3M</div>
+    <h1>Drone-<span class="sar">SAR</span><br>Diario de tareas</h1>
+    <p class="lede">Registro cronológico del trabajo realizado en el desarrollo del sistema de búsqueda y rescate basado en UAV.</p>
+    <div class="meta">
+      <span>AUTORA: <b>Nerea Gorostidi García</b></span>
+      <span>NODO EDGE: <b>Raspberry Pi 5</b></span>
+      <span>CLOUD: <b>AWS EC2 · InfluxDB</b></span>
+    </div>
+  </header>
+
+  <section class="estado">
+    <div class="estado-head">
+      <span class="fecha">Situación actual · 16 jul 2026</span>
+      <h2>Dónde está el proyecto ahora</h2>
+    </div>
+    <p>El proyecto tiene ya resuelta toda la base sobre la que se construirá el resto del sistema. Está cerrada la <b>parte normativa</b> —certificado de piloto A1/A3 y número de operador AESA— y el acceso a un <b>espacio de vuelo seguro</b>, gracias a la federación en el club Alas de Galapagar, cuya licencia de socio incluye el seguro obligatorio. He realizado además un <b>primer vuelo de referencia</b>, cuyo registro GPS me sirve para planificar misiones en simulación.</p>
+    <p>En el plano técnico, la <b>infraestructura extremo a extremo está operativa</b>: el nodo <i>edge</i> (Raspberry Pi 5 con el sensor ambiental BME680) publica sus lecturas por MQTT hacia el servidor en la nube (AWS EC2 con Mosquitto e InfluxDB), con almacenamiento intermedio local para no perder datos ante cortes de red. El dominio, los servidores web y la publicación del código en GitHub también están en marcha.</p>
+    <p>En cuanto al vuelo, he llevado el <b>control autónomo de la simulación a la Raspberry Pi</b>: la Pi comanda el dron simulado (Mission Planner + ArduPilot SITL) por MAVLink a través de la red. Sobre esa base he montado el <b>control por MQTT</b> —un publicador en el EC2 y un receptor en la Pi que traduce las órdenes a MAVLink— y una <b>API REST con una página de botones</b> para teleoperar el dron (armar, despegar, aterrizar, RTL, misión) desde el navegador.</p>
+    <p><b>Próximos pasos:</b> montar el acceso HTTPS del panel de control, avanzar hacia el montaje del dron definitivo (chasis Tarot 650) y desplegar la detección de personas por visión artificial (YOLO sobre el acelerador Hailo-8L).</p>
+</section>
+
+  <div class="log">
+
+    <!-- ============ HASTA 11 JULIO ============ -->
+    <div class="phase">
+      <div class="phase-head">
+        <span class="phase-date">Hasta 11 julio</span>
+      </div>
+      <ul class="tasks">
+        <li>Índice de contenidos de la memoria planteado.</li>
+        <li>Lectura e investigación sobre la normativa. Certificado <b>A1/A3 de AESA</b> y número de operador obtenidos.</li>
+        <li>Investigación sobre dónde volar el dron y cómo pedir permisos: consulta a clubes de aeromodelismo (Majadahonda y Alas de Galapagar) por sus condiciones. Inscripción como socia en <b>Alas de Galapagar</b>, ya que no requiere pedir permisos a AESA y ofrece un lugar seguro y cómodo para volar cuando quiera.</li>
+        <li>Compra de la <b>Raspberry Pi 5</b> y del primer sensor, el <b>BME680</b> <span class="cost">20,85 €</span> — sensor ambiental que mide temperatura, humedad relativa, presión barométrica y resistencia de gas.
+          <ul class="sub">
+            <li>Conexión sensor – Raspberry configurada.</li>
+          </ul>
+        </li>
+        <li>Instancia <b>EC2</b> configurada en AWS <span class="cost">~4 $/mes (24 h)</span>:
+          <ul class="sub">
+            <li>AMI Ubuntu sobre <b>t3.small</b>.</li>
+            <li>Grupos de seguridad creados: puerto <code>1883</code> para la comunicación MQTT con el broker Mosquitto, puerto <code>22</code> para SSH y puerto <code>8086</code> para el acceso a la base de datos InfluxDB.</li>
+            <li>Instalación del servicio broker <b>Mosquitto</b> en la EC2 para la comunicación con el sensor.</li>
+            <li>Creación de <b>IP elástica</b> (sin ella la IP pública de la EC2 cambiaba al reiniciarse, obligando a modificar los scripts, peticiones HTTP…).</li>
+          </ul>
+        </li>
+        <li>Publicación de datos (del sensor a la EC2):
+          <ul class="sub">
+            <li>La Raspberry Pi actúa como cliente <b>publicador</b> y en el servidor un segundo cliente actúa como <b>suscriptor</b>, recibiendo los mensajes y publicándolos en InfluxDB. Scripts creados: <code>sensor.py</code> en la Pi y <code>mqtt_to_influx.py</code> en la EC2.</li>
+            <li>Implementación de la arquitectura <b>store-and-forward</b> en <code>sensor.py</code> para que ningún dato se pierda ante una caída temporal de la conexión (cada lectura se almacena primero en una base de datos local SQLite, <code>buffer.db</code>).</li>
+          </ul>
+        </li>
+        <li>Recepción y almacenamiento en el servidor:
+          <ul class="sub">
+            <li><code>mqtt_to_influx.py</code> actúa como cliente suscriptor; se ejecuta en la EC2 dentro de un entorno virtual propio (<code>env</code>) con las librerías <code>paho-mqtt</code> (comunicación con el broker) e <code>influxdb-client</code> (escritura en la base de datos).</li>
+            <li>Cada lectura recibida se almacena en InfluxDB.</li>
+          </ul>
+        </li>
+        <li>Almacenamiento en InfluxDB:
+          <ul class="sub">
+            <li>Abierta una entrada en el grupo de seguridad para el puerto <code>8086</code>, de forma que se pueda acceder desde el navegador mediante la dirección pública de la EC2.</li>
+          </ul>
+        </li>
+        <li>Configuración de servicios <b>systemctl</b> de Linux en la Pi y en el servidor, para que inicien sus procesos automáticamente en cada arranque sin intervención manual.</li>
+        <li>Publicación de los scripts en <b>GitHub</b>. Cada repo incluye README (documentación de uso), <code>.gitignore</code> (evita subir archivos sensibles o innecesarios), <code>requirements.txt</code> (dependencias reproducibles) y <code>.env.example</code> (plantilla de credenciales, que se mantienen fuera del repositorio).
+          <ul class="sub">
+            <li><a class="link" href="https://github.com/nereagorostidi/drone-cloud-server">github.com/nereagorostidi/drone-cloud-server</a></li>
+            <li><a class="link" href="https://github.com/nereagorostidi/drone-edge-companion">github.com/nereagorostidi/drone-edge-companion</a></li>
+          </ul>
+        </li>
+        <li>Compra del dominio <code>gorostiditfg.com</code> en <b>Cloudflare</b> <span class="cost">10,41 $</span>, para acceder a los servicios mediante subdominios legibles en vez de la IP del servidor.</li>
+        <li>Creación de dos páginas (HTML + CSS sencillo) que usaré más adelante: una para la presentación del proyecto y otra para el control del dron.</li>
+      </ul>
+    </div>
+
+    <!-- ============ 11 JULIO ============ -->
+    <div class="phase">
+      <div class="phase-head">
+        <span class="phase-date">11 julio</span>
+      </div>
+      <ul class="tasks">
+        <li>Creación de servidores web:
+          <ul class="sub">
+            <li>Instalación del servidor web <b>nginx</b> y aprendizaje de la configuración de varios servidores virtuales web en la misma máquina.</li>
+            <li>Alta en el servidor DNS de Cloudflare de los nombres de host necesarios (ya puedo acceder a las páginas creadas con el dominio): <code>www.gorostiditfg.com</code> y <code>control.gorostiditfg.com</code>.</li>
+            <li>Configuración de nginx como <b>reverse proxy</b> para acceder a la interfaz de InfluxDB igual que a las demás webs: como usa el puerto <code>8086</code> en la petición HTTP, había que indicarlo y ya no es necesario especificarlo → <code>influxdb.gorostiditfg.com</code>.</li>
+          </ul>
+        </li>
+        <li>Gestión de claves públicas / privadas:
+          <ul class="sub">
+            <li>Limpieza y ordenación de las claves públicas/privadas, que estaban mezcladas. Configuración del fichero <code>.ssh</code> en la EC2 para permitir el acceso con mi clave pública en lugar del <code>.pem</code> (habilitando esta otra forma editando el <code>.ssh</code>).</li>
+          </ul>
+        </li>
+        <li>Mission Planner:
+          <ul class="sub">
+            <li>Configuración del simulador de vuelo <b>Mission Planner</b>. Vuelos de prueba en dos zonas distintas.</li>
+            <li>Desarrollo de un script en Python (con <b>pymavlink</b>) que se conecta al simulador vía MAVLink para enviar comandos de vuelo: armado/desarmado, despegue y modo AUTO para ejecutar misiones por waypoints. La conexión se establece mediante reenvío UDP de Mission Planner al puerto local <code>14550</code>.</li>
+          </ul>
+        </li>
+      </ul>
+    </div>
+
+    <!-- ============ 12 JULIO ============ -->
+    <div class="phase">
+      <div class="phase-head">
+        <span class="phase-date">12 julio</span>
+      </div>
+      <ul class="tasks">
+        <li>Visita al club de Galapagar: recogida del carnet de socia y las llaves de acceso, y presentación con el presidente.</li>
+        <li>Contactos en el club:
+          <ul class="sub">
+            <li>Presidente: <b>Darco</b>.</li>
+            <li>Primer vuelo acompañada por <b>José Manuel</b>.</li>
+            <li>Contacto por correo: <b>Paco</b> (Francisco). También me presentan a otro socio con un DJI (me enseña su maletín) y a alguien con mucho conocimiento sobre baterías.</li>
+          </ul>
+        </li>
+        <li>Me muestran en Mission Planner la zona por la que debo volar, y por qué aparece marcada en amarillo.</li>
+        <li>Primer vuelo real de un dron: uso de la cuenta de mi padre (instalación y configuración de la app DJI en mi móvil).</li>
+        <li>Me recomiendan comprar mejores adaptadores/cables para el dron (uno de carga más rápida).</li>
+        <li>Grabación de vídeos con el DJI en el primer vuelo. Los datos deberían quedar almacenados.</li>
+        <li><b>Importante:</b> pegar en el dron mi número de operador.</li>
+      </ul>
+    </div>
+
+    <!-- ============ 13 JULIO ============ -->
+    <div class="phase">
+      <div class="phase-head">
+        <span class="phase-date">13 julio</span>
+      </div>
+      <ul class="tasks">
+        <li>Investigación sobre la posibilidad de volar el dron en <b>Comillas (Cantabria)</b>, con vistas a realizar un vuelo allí este fin de semana: consulta de la normativa y de las restricciones de la zona.</li>
+        <li>Configuración del dron en su aplicación y colocación física de mi propio <b>número de operador</b> sobre el dron, según exige la normativa.</li>
+        <li>Actualización y mejora de la <b>página web</b> del proyecto para dejarla presentable de cara al tutor.
+          <ul class="sub">
+            <li>Creación de la página del <b>diario de tareas</b> y de la página de <b>operador</b>.</li>
+            <li>Generación de un <b>código QR</b> que enlaza con la página de operador, para pegarlo en el dron: al escanearlo muestra los datos del operador.</li>
+          </ul>
+        </li>
+        <li>Subida de los <i>logs</i> del primer vuelo a <b>Airdata</b> y a <b>PhantomHelp Log Viewer</b> para revisar y analizar los datos del vuelo.</li>
+        <li>Eliminación del puerto <code>8086</code> del grupo de seguridad de la EC2, ya innecesario: el acceso a la interfaz de InfluxDB se realiza ahora a través de <b>nginx</b> configurado como <i>reverse proxy</i> (<code>influxdb.gorostiditfg.com</code>), sin exponer el puerto directamente a internet.</li>
+        <li>Comunicación al tutor del <b>avance del proyecto</b>, compartiéndole la web para que pueda hacer el seguimiento del progreso a través del diario de tareas.</li>
+      </ul>
+    </div>
+
+    <!-- ============ 14 JULIO ============ -->
+    <div class="phase">
+      <div class="phase-head">
+        <span class="phase-date">14 julio</span>
+      </div>
+      <ul class="tasks">
+        <li>He retomado el <b>control del dron simulado desde Python</b> (Mission Planner + ArduPilot SITL): Había un problema del armado (los <i>pre-arm checks</i> y el GPS del simulador) y he conseguido que vuelva a funcionar. He comprobado que efectivamente funcione el ciclo completo —armado, despegue y misión por waypoints en modo AUTO—, viendo el dron moverse en Mission Planner.</li>
+        <li>Pasar el control de vuelo a la <b>Raspberry Pi</b>, para que las órdenes salgan del nodo <i>edge</i> y no del PC:
+          <ul class="sub">
+            <li>Configuración de la conexión por red entre la Pi y Mission Planner, usando las IP reales de cada máquina en lugar de <code>127.0.0.1</code>, el reenvío UDP y el puerto <code>14550</code>.</li>
+            <li>Entender la lógica de quién envía y quién escucha (<code>udpin</code>/<code>udpout</code>) y por qué en MAVLink la Pi escucha mientras recibe la telemetría del autopiloto.</li>
+            <li>Conseguir que la Pi de órdenes al dron simulado por MAVLink a través de la red, validando así la arquitectura <i>edge-first</i>.</li>
+          </ul>
+        </li>
+      </ul>
+    </div>
+
+    <!-- ============ 15 JULIO ============ -->
+    <div class="phase">
+      <div class="phase-head">
+        <span class="phase-date">15 julio</span>
+      </div>
+      <ul class="tasks">
+        <li>Implementación del <b>control del dron por MQTT</b>, montando el patrón publicador–receptor:
+          <ul class="sub">
+            <li>Cración de un publicador (<code>comandos.py</code>, en el EC2) que envía las órdenes por MQTT, y de un receptor (<code>receptor.py</code>, en la Pi) que las traduce a MAVLink y las ejecuta sobre el dron simulado.</li>
+            <li>He empezado por argumentos como armar/desarmar para comprobar que funcione y después he añadido más: despegue, aterrizaje, RTL (volver a casa), mantener posición e iniciar misión.</li>
+          </ul>
+        </li>
+        <li>Conversión del publicador en una <b>API REST con Flask</b> (<code>api.py</code>, en el EC2) para poder invocar los comandos por HTTP en lugar de por terminal, y para ello se ha abierto el puerto <code>5000</code> en el grupo de seguridad de AWS.</li>
+        <li>Modificación de la <b>página de control web</b> añadiendo botones para cada comando, que llama a esa API: <a href="https://control.gorostiditfg.com">control.gorostiditfg.com</a></li>
+      </ul>
+    </div>
+
+  </div>
+
+  <footer>
+    Documento de seguimiento del TFG · Se actualiza periódicamente.<br>
+    Sistema Drone-SAR · Categoría «específica» (Reglamentos UE 2019/947 y 2019/945) · AESA.
+  </footer>
+
+</div>
+</body>
+</html>

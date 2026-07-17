@@ -1,0 +1,191 @@
+/* =====================================================================
+   estilos.css  —  Diseño de la página de control Drone-SAR
+   Este fichero contiene TODO el CSS (los estilos) que antes estaban
+   dentro del <style> en el HTML. El HTML lo carga con:
+       <link rel="stylesheet" href="estilos.css">
+   ===================================================================== */
+
+
+/* ---------------------------------------------------------------------
+   VARIABLES DE COLOR Y FUENTE
+   :root es el "nivel más alto" del documento. Aquí definimos variables
+   (--nombre) que luego reutilizamos en todo el CSS con var(--nombre).
+   Así, si quieres cambiar un color, lo cambias UNA vez aquí.
+   --------------------------------------------------------------------- */
+:root{
+  --bg:#0F1E2E;        /* fondo azul muy oscuro (color base de la página) */
+  --surface:#16293C;   /* fondo de tarjetas/botones neutros (un poco más claro) */
+  --ink:#F5F7FA;       /* color del texto principal (casi blanco) */
+  --slate:#8fa3b5;     /* texto secundario (gris azulado) */
+  --line:#26405A;      /* color de bordes y líneas */
+  --signal:#FF6A13;    /* naranja de acento (rescate SAR) */
+  --signal-d:#c94f0d;  /* naranja más oscuro (variante) */
+  --danger:#E24B4A;    /* rojo (para desarmar / acciones peligrosas) */
+  --danger-d:#b03433;  /* rojo más oscuro (variante) */
+  --ok:#1F9D6B;        /* verde (acciones correctas) */
+  --sky:#2F9BC4;       /* azul cielo (acento secundario) */
+
+  /* Fuentes: definimos tres familias con su nombre y alternativas de reserva. */
+  --display:"Space Grotesk",system-ui,sans-serif;   /* títulos */
+  --body:"Inter",system-ui,sans-serif;              /* texto normal */
+  --mono:"JetBrains Mono",ui-monospace,monospace;   /* datos, registro, etiquetas técnicas */
+}
+
+
+/* ---------------------------------------------------------------------
+   RESET BÁSICO
+   El selector universal * afecta a TODOS los elementos.
+   Quitamos márgenes y rellenos por defecto del navegador y hacemos que
+   el tamaño incluya el borde (box-sizing), para que los cálculos cuadren.
+   --------------------------------------------------------------------- */
+*{
+  box-sizing:border-box;
+  margin:0;
+  padding:0;
+}
+
+
+/* ---------------------------------------------------------------------
+   CUERPO DE LA PÁGINA
+   --------------------------------------------------------------------- */
+body{
+  background:var(--bg);              /* fondo oscuro */
+  color:var(--ink);                  /* texto claro */
+  font-family:var(--body);           /* fuente por defecto: Inter */
+  -webkit-font-smoothing:antialiased;/* texto más suave en pantallas Apple */
+  padding:28px 18px;                 /* aire alrededor: 28px arriba/abajo, 18px lados */
+  min-height:100vh;                  /* ocupa como mínimo toda la altura de la pantalla */
+}
+
+/* Contenedor central que agrupa todo y limita el ancho. */
+.wrap{
+  max-width:560px;   /* no se estira más de 560px (cómodo de leer) */
+  margin:0 auto;     /* 'auto' a los lados = centrado horizontal */
+}
+
+
+/* ---------------------------------------------------------------------
+   ENCABEZADO (eyebrow, título, subtítulo)
+   --------------------------------------------------------------------- */
+.eyebrow{
+  font-family:var(--mono);       /* fuente monoespaciada (técnica) */
+  font-size:11px;
+  letter-spacing:.16em;          /* letras algo separadas */
+  text-transform:uppercase;      /* todo en mayúsculas */
+  color:var(--signal);           /* naranja */
+  font-weight:600;
+}
+h1{
+  font-family:var(--display);    /* Space Grotesk */
+  font-weight:700;               /* negrita fuerte */
+  font-size:2rem;
+  letter-spacing:-.02em;         /* letras un pelín más juntas (estético en títulos) */
+  margin:6px 0 4px;              /* márgenes arriba/abajo */
+}
+h1 .sar{ color:var(--signal); }  /* colorea de naranja el elemento con clase "sar" (el punto) */
+.sub{
+  color:var(--slate);            /* gris azulado */
+  font-size:.95rem;
+  font-family:var(--mono);
+}
+
+
+/* ---------------------------------------------------------------------
+   GRUPOS DE BOTONES
+   --------------------------------------------------------------------- */
+.grupo{ margin-top:28px; }        /* separación entre secciones */
+
+.grupo h2{
+  font-family:var(--mono);
+  font-size:12px;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--slate);
+  margin-bottom:12px;
+  font-weight:500;
+}
+
+/* "fila" coloca los botones en horizontal, uno al lado del otro. */
+.fila{
+  display:flex;      /* activa el modo flexible (elementos en línea) */
+  gap:12px;          /* separación entre botones */
+  flex-wrap:wrap;    /* si no caben, saltan a la línea siguiente */
+}
+
+
+/* ---------------------------------------------------------------------
+   BOTONES
+   --------------------------------------------------------------------- */
+button{
+  font-family:var(--display);
+  font-weight:600;
+  font-size:1rem;
+  color:#fff;                /* texto blanco */
+  border:none;               /* sin borde */
+  border-radius:12px;        /* esquinas redondeadas */
+  padding:16px 20px;         /* tamaño interior (alto/ancho del botón) */
+  cursor:pointer;            /* el cursor se vuelve "mano" al pasar por encima */
+  flex:1;                    /* cada botón ocupa el mismo espacio en su fila */
+  min-width:120px;           /* pero nunca más estrecho de 120px */
+  transition:transform .1s, filter .15s;  /* animación suave al pulsar/pasar */
+}
+button:hover{ filter:brightness(1.1); }   /* al pasar el ratón, se aclara un poco */
+button:active{ transform:scale(.97); }     /* al pulsar, se encoge un pelín (efecto "clic") */
+
+/* Colores según el tipo de botón (las clases que pusimos en el HTML). */
+.b-ok{ background:var(--signal); }              /* naranja: armar, despegar */
+.b-danger{ background:var(--danger); }          /* rojo: desarmar */
+.b-neutral{                                     /* gris oscuro: navegación/regreso */
+  background:var(--surface);
+  border:1px solid var(--line);
+}
+
+
+/* ---------------------------------------------------------------------
+   ZONA DE DESPEGUE (campo de altitud + botón)
+   --------------------------------------------------------------------- */
+.takeoff{
+  display:flex;
+  gap:12px;
+  align-items:stretch;   /* el campo y el botón tienen la misma altura */
+  flex-wrap:wrap;
+}
+.takeoff input{
+  font-family:var(--mono);
+  font-size:1rem;
+  background:var(--surface);
+  border:1px solid var(--line);
+  color:var(--ink);
+  border-radius:12px;
+  padding:0 16px;
+  width:120px;
+  text-align:center;     /* el número se centra dentro del campo */
+}
+.takeoff input:focus{
+  outline:none;                    /* quita el borde azul feo por defecto */
+  border-color:var(--signal);      /* al escribir, el borde se pone naranja */
+}
+
+
+/* ---------------------------------------------------------------------
+   REGISTRO DE COMANDOS (el recuadro de abajo)
+   --------------------------------------------------------------------- */
+.log{
+  margin-top:28px;
+  background:#0a1520;            /* fondo casi negro, tipo terminal */
+  border:1px solid var(--line);
+  border-radius:12px;
+  padding:16px;
+  font-family:var(--mono);       /* fuente monoespaciada (aspecto de consola) */
+  font-size:12.5px;
+  line-height:1.7;
+  min-height:120px;              /* altura mínima */
+  max-height:240px;              /* si crece mucho, no pasa de aquí... */
+  overflow-y:auto;               /* ...y aparece barra de desplazamiento */
+  color:var(--slate);
+}
+/* Colores de las líneas del registro según su tipo (los pone el JavaScript). */
+.log .l-ok{ color:var(--ok); }       /* verde: enviado con éxito */
+.log .l-err{ color:var(--danger); }  /* rojo: error */
+.log .l-cmd{ color:var(--ink); }     /* claro: el comando que se envía */
+.log .t{ color:#5a6b7b; }            /* gris apagado: la hora */

@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Operador UAS · Drone-SAR</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0F1E2E;            /* fondo oscuro: se lee bien al sol y destaca como credencial */
+    --card:#FFFFFF;
+    --ink:#0F1E2E;--slate:#5A6B7B;
+    --line:#E2E7EC;--line-strong:#CDD6DF;
+    --signal:#FF6A13;--signal-soft:#FFF1E8;
+    --sky:#0E7490;
+    --display:"Space Grotesk",system-ui,sans-serif;
+    --body:"Inter",system-ui,sans-serif;
+    --mono:"JetBrains Mono",ui-monospace,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    background:
+      radial-gradient(1200px 600px at 50% -10%, #14293c 0%, var(--bg) 60%);
+    min-height:100vh;color:var(--ink);font-family:var(--body);
+    -webkit-font-smoothing:antialiased;
+    display:flex;align-items:center;justify-content:center;
+    padding:28px 18px;
+  }
+  .card{
+    width:100%;max-width:420px;background:var(--card);border-radius:20px;
+    overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.4);
+  }
+  .top{background:var(--signal);height:8px;width:100%}
+
+  .head{padding:26px 26px 18px}
+  .eyebrow{
+    font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;
+    color:var(--signal);font-weight:600;
+  }
+  .title{
+    font-family:var(--display);font-weight:700;font-size:1.7rem;letter-spacing:-.02em;
+    margin-top:6px;line-height:1.05;
+  }
+  .title .sar{color:var(--signal)}
+  .sub{font-size:.9rem;color:var(--slate);margin-top:6px}
+
+  /* Número de operador — el dato protagonista */
+  .opnum{
+    margin:4px 26px 0;padding:18px 20px;border-radius:14px;
+    background:var(--ink);color:#fff;
+  }
+  .opnum .label{
+    font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;
+    color:#8fa3b5;
+  }
+  .opnum .num{
+    font-family:var(--mono);font-weight:700;font-size:1.5rem;letter-spacing:.02em;
+    margin-top:6px;word-break:break-all;
+  }
+  .opnum .hint{font-family:var(--mono);font-size:10px;color:#6b8093;margin-top:8px;letter-spacing:.03em}
+
+  .rows{padding:20px 26px 6px}
+  .row{display:flex;justify-content:space-between;gap:16px;padding:12px 0;border-bottom:1px solid var(--line)}
+  .row:last-child{border-bottom:none}
+  .row .k{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--slate);flex:0 0 auto;padding-top:2px}
+  .row .v{font-size:.98rem;font-weight:500;text-align:right}
+
+  .found{
+    margin:8px 20px 22px;padding:14px 16px;border-radius:12px;
+    background:var(--signal-soft);border:1px solid #FBD9C4;
+  }
+  .found b{font-family:var(--display);font-weight:600;color:var(--signal);font-size:.95rem}
+  .found p{font-size:.88rem;color:#7a4a2c;margin-top:3px;line-height:1.5}
+  .found a{color:var(--signal);font-weight:600;text-decoration:none}
+
+  .foot{padding:0 26px 24px;font-family:var(--mono);font-size:10.5px;color:var(--slate);line-height:1.6;text-align:center}
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="top"></div>
+
+    <div class="head">
+      <div class="eyebrow">Operador UAS · AESA</div>
+      <div class="title">Drone-<span class="sar">SAR</span></div>
+      <div class="sub">Identificación del operador de la aeronave</div>
+    </div>
+
+    <!-- NÚMERO DE OPERADOR (sin los 3 caracteres secretos del Remote ID) -->
+    <div class="opnum">
+      <div class="label">Nº de operador UAS</div>
+      <div class="num">ESPkpq4pb7xmj65p</div>   <!-- número público del certificado (sin los 3 dígitos secretos del Remote ID) -->
+      <div class="hint">Reglamento (UE) 2019/947</div>
+    </div>
+
+    <!-- DATOS. Borra las filas que no quieras hacer públicas. -->
+    <div class="rows">
+      <div class="row">
+        <span class="k">Operadora</span>
+        <span class="v">Nerea Gorostidi García</span>
+      </div>
+      <div class="row">
+        <span class="k">Competencia</span>
+        <span class="v">Piloto A1 / A3 (AESA)</span>
+      </div>
+      <div class="row">
+        <span class="k">Proyecto</span>
+        <span class="v">TFG · UC3M</span>
+      </div>
+      <div class="row">
+        <span class="k">Uso</span>
+        <span class="v">Búsqueda y rescate</span>
+      </div>
+    </div>
+
+    <!-- OPCIONAL: contacto para devolución. Borra este bloque entero si no quieres exponer contacto. -->
+    <div class="found">
+      <b>¿Has encontrado este dron?</b>
+      <p>Escribe a <a href="mailto:100496438@alumnos.uc3m.es">100496438@alumnos.uc3m.es</a> para devolverlo. Gracias.</p>
+    </div>
+
+    <div class="foot">
+      gorostiditfg.com · Documento de identificación del operador
+    </div>
+  </div>
+</body>
+</html>
