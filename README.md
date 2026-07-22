@@ -5,7 +5,7 @@ Incluye además las páginas web del proyecto, el panel de control y la API REST
 
 ## Estructura del repositorio
 - `www/web/` — Contenido de **web.gorostiditfg.com** (índice, journal, todo, operador).
-- `control/` — Contenido de **control.gorostiditfg.com** (panel de control con botones de comando).
+- `www/control/` — Contenido de **control.gorostiditfg.com** (panel de control con botones de comando).
 - `api-rest/` — API REST que traduce las peticiones HTTP del panel de control a mensajes MQTT.
   - `api.py` — Servidor Flask: recibe la petición HTTP del botón y publica el comando en MQTT.
   - `comandos.py` — Cliente de terminal alternativo: publica los mismos comandos sin pasar por la web.

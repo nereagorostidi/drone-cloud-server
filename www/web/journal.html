@@ -87,7 +87,7 @@
   <div class="statusbar">
     <span class="live"><span class="dot"></span>SISTEMA OPERATIVO</span>
     <span class="sep">·</span>
-    <span>ÚLT. ACTUALIZACIÓN: 16/07/2026</span>
+    <span>ÚLT. ACTUALIZACIÓN: 20/07/2026</span>
     <nav class="nav">
       <a href="journal.html" class="here">Diario</a>
       <a href="todo.html">Pendientes</a>
@@ -107,14 +107,15 @@
 
   <section class="estado">
     <div class="estado-head">
-      <span class="fecha">Situación actual · 16 jul 2026</span>
+      <span class="fecha">Situación actual · 20 jul 2026</span>
       <h2>Dónde está el proyecto ahora</h2>
     </div>
     <p>El proyecto tiene ya resuelta toda la base sobre la que se construirá el resto del sistema. Está cerrada la <b>parte normativa</b> —certificado de piloto A1/A3 y número de operador AESA— y el acceso a un <b>espacio de vuelo seguro</b>, gracias a la federación en el club Alas de Galapagar, cuya licencia de socio incluye el seguro obligatorio. He realizado además un <b>primer vuelo de referencia</b>, cuyo registro GPS me sirve para planificar misiones en simulación.</p>
-    <p>En el plano técnico, la <b>infraestructura extremo a extremo está operativa</b>: el nodo <i>edge</i> (Raspberry Pi 5 con el sensor ambiental BME680) publica sus lecturas por MQTT hacia el servidor en la nube (AWS EC2 con Mosquitto e InfluxDB), con almacenamiento intermedio local para no perder datos ante cortes de red. El dominio, los servidores web y la publicación del código en GitHub también están en marcha.</p>
-    <p>En cuanto al vuelo, he llevado el <b>control autónomo de la simulación a la Raspberry Pi</b>: la Pi comanda el dron simulado (Mission Planner + ArduPilot SITL) por MAVLink a través de la red. Sobre esa base he montado el <b>control por MQTT</b> —un publicador en el EC2 y un receptor en la Pi que traduce las órdenes a MAVLink— y una <b>API REST con una página de botones</b> para teleoperar el dron (armar, despegar, aterrizar, RTL, misión) desde el navegador.</p>
-    <p><b>Próximos pasos:</b> montar el acceso HTTPS del panel de control, avanzar hacia el montaje del dron definitivo (chasis Tarot 650) y desplegar la detección de personas por visión artificial (YOLO sobre el acelerador Hailo-8L).</p>
-</section>
+    <p>En el plano técnico, la <b>infraestructura extremo a extremo está operativa</b>: el nodo <i>edge</i> (Raspberry Pi 5 con el sensor ambiental BME680) publica sus lecturas por MQTT hacia el servidor en la nube (AWS EC2 con Mosquitto e InfluxDB), con almacenamiento intermedio local para no perder datos ante cortes de red. El dominio y los servidores web están en marcha y todas las páginas se sirven ya por <b>HTTPS</b> con certificado propio.</p>
+    <p>En cuanto al vuelo, he llevado el <b>control autónomo de la simulación a la Raspberry Pi</b>: la Pi comanda el dron simulado (Mission Planner + ArduPilot SITL) por MAVLink a través de la red. Sobre esa base he montado el <b>control por MQTT</b> —un publicador en el EC2 y un receptor en la Pi que traduce las órdenes a MAVLink— y una <b>API REST con una página de botones</b> para teleoperar el dron (armar, despegar, aterrizar, RTL, misión) desde el navegador, ya validada contra el simulador.</p>
+    <p>El repositorio del servidor se ha <b>reorganizado por carpetas</b> para separar las páginas web, el panel de control y la API. En paralelo, un fallo de la tarjeta microSD ha dejado la Raspberry Pi temporalmente fuera de servicio, lo que ha obligado a replantear la disciplina de respaldo del código del nodo <i>edge</i>.</p>
+    <p><b>Próximos pasos:</b> resolver el bloqueo de contenido mixto que impide llamar a la API desde las páginas en HTTPS, convertir la API y el receptor en servicios <code>systemd</code>, restaurar la Raspberry Pi, avanzar hacia el montaje del dron definitivo (chasis Tarot 650) y desplegar la detección de personas por visión artificial (YOLO sobre el acelerador Hailo-8L).</p>
+  </section>
 
   <div class="log">
 
@@ -274,6 +275,45 @@
 
   </div>
 
+  <!-- ============ 16 JULIO ============ -->
+    <div class="phase">
+      <div class="phase-head">
+        <span class="phase-date">16 julio</span>
+      </div>
+      <ul class="tasks">
+        <li>Repaso conceptual a fondo de la <b>API REST</b> (<code>api.py</code>) para entender no solo qué hace, sino por qué existe y qué papel tiene dentro de la arquitectura. Se ha revisado la cadena completa de comunicación: navegador (HTTP) → <code>api.py</code> en el EC2, que traduce HTTP a MQTT → broker Mosquitto (puerto <code>1883</code>) → <code>receptor.py</code> en la Raspberry Pi, que traduce MQTT a MAVLink → autopiloto → dron.
+          <ul class="sub">
+            <li>El HTTP aparece únicamente porque el emisor es el navegador, que solo habla ese protocolo.</li>
+            <li><code>api.py</code> y <code>receptor.py</code> no están conectados directamente: se comunican a través del broker, gracias al modelo <b>publicador/suscriptor desacoplado</b> de MQTT.</li>
+            <li><code>comandos.py</code> y <code>api.py</code> son alternativas paralelas para enviar los mismos comandos, no pasos consecutivos.</li>
+            <li>El formato <b>JSON</b> solo se usa en los tramos HTTP y MQTT; el tramo MAVLink es <b>binario</b>, por ser un enlace de telemetría con ancho de banda limitado.</li>
+            <li>Los puertos son por servicio: Flask en el <code>5000</code> y Mosquitto en el <code>1883</code>. <code>receptor.py</code> no abre ningún puerto porque actúa como cliente, no como servidor.</li>
+          </ul>
+        </li>
+        <li>Comprobación de que la <b>página de control con botones</b> funciona correctamente y envía las señales al simulador.</li>
+        <li>Error «puerto 5000 en uso» al relanzar la API: se debía a un <b>proceso zombi</b> que quedó vivo tras un <code>Ctrl+C</code> incompleto. Resuelto con <code>pkill -f api.py</code>.</li>
+        <li>A raíz de esto se ha decidido convertir <code>api.py</code> y <code>receptor.py</code> en <b>servicios systemd</b>, igual que ya lo están <code>mqtt_to_influx.py</code> y <code>sensor.py</code>, para que arranquen solos y no dependan de una terminal abierta. <span class="cost">PENDIENTE</span></li>
+        <li>Creación de <b>clave SSL</b> para proteger con HTTPS todas las páginas creadas, lo que ha implicado abrir también el puerto <code>443</code> en el grupo de seguridad del servidor.</li>
+        <li>Al pasar las páginas a HTTPS, la <b>API ha dejado de funcionar</b>. El diagnóstico es un bloqueo de <b>contenido mixto</b>: el navegador impide que una página servida por HTTPS haga peticiones a un recurso HTTP.
+          <ul class="sub">
+            <li>Solución planteada: crear el subdominio <code>api.gorostiditfg.com</code> en Cloudflare en modo <i>Proxied</i>, configurar nginx como <i>reverse proxy</i> hacia <code>localhost:5000</code> y actualizar la URL del <code>fetch</code> en el JavaScript del panel. <span class="cost">PENDIENTE</span></li>
+          </ul>
+        </li>
+        <li><b>Nota:</b> la API sigue sin autenticación, decisión deliberada mientras se trabaja en simulación. Habrá que añadirla antes de conectarla al hardware real.</li>
+      </ul>
+    </div>
+
+    <!-- ============ 17 JULIO ============ -->
+    <div class="phase">
+      <div class="phase-head">
+        <span class="phase-date">17 julio</span>
+      </div>
+      <ul class="tasks">
+        <li>Actualización del repositorio del servidor en <b>GitHub</b>, dividiéndolo en carpetas (<code>www/web/</code>, <code>control/</code> y <code>api-rest/</code>) e incluyendo las páginas HTML, que hasta ahora solo existían en el servidor.</li>
+        <li>Al ir a actualizar el repositorio de la Pi, se ha detectado que <b>no se puede acceder a ella por SSH</b>. La tarjeta <b>microSD se ha estropeado</b>, probablemente por cortar la corriente bruscamente en lugar de hacer un <code>sudo poweroff</code>. Se ha intentado volver a cargar la imagen de Raspberry Pi OS en la tarjeta y no es capaz de leerla.</li>
+        <li><b>Lección aprendida:</b> apagar siempre la Pi con <code>sudo poweroff</code> y mantener todo actualizado en GitHub, para no perder los códigos ni el trabajo hecho hasta el momento.</li>
+      </ul>
+    </div>
   <footer>
     Documento de seguimiento del TFG · Se actualiza periódicamente.<br>
     Sistema Drone-SAR · Categoría «específica» (Reglamentos UE 2019/947 y 2019/945) · AESA.
