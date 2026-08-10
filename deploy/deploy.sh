@@ -1,0 +1,1 @@
+ cp journal.html /var/www/html/journal.html
