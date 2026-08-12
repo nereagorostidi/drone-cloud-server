@@ -46,6 +46,15 @@ COMANDOS_VALIDOS = {"arm", "disarm", "takeoff", "land", "rtl", "hold",
                     "start_mission"}
 ALTITUD_MAXIMA = 120        # limite legal (Reglamento UE): 120 m sobre el terreno
 
+# Comandos de configuracion de la Raspberry Pi (grupo "Sistema" del panel).
+# A diferencia de COMANDOS_VALIDOS (que van al topic de comandos de vuelo),
+# estos van cada uno a su propio dominio MQTT: dronsar/{drone_id}/{dominio}/config
+COMANDOS_CONFIG = {
+    "shutdown": "sistema",
+    "set_sensor_interval": "sensor",
+    "set_video_throttle": "deteccion",
+}
+
 
 # =====================================================================
 #  CLIENTE MQTT (se conecta una vez y se reutiliza)
@@ -55,8 +64,8 @@ mqtt_client.connect(MQTT_BROKER, MQTT_PORT, 60)
 mqtt_client.loop_start()
 
 
-def publicar_comando(command, params):
-    """Construye el JSON y lo publica en el topic de comandos."""
+def _publicar(topic, command, params):
+    """Construye el JSON y lo publica en el topic indicado."""
     mensaje = {
         "command": command,
         "params": params,
@@ -64,10 +73,22 @@ def publicar_comando(command, params):
         "command_id": uuid.uuid4().hex[:6],
         "timestamp": datetime.now().astimezone().isoformat(),
     }
-    topic = f"dronsar/{DRONE_ID}/comandos"
     info = mqtt_client.publish(topic, json.dumps(mensaje), qos=1, retain=False)
     info.wait_for_publish(timeout=5)
     return mensaje, info.is_published()
+
+
+def publicar_comando(command, params):
+    """Publica un comando de vuelo en su topic de siempre."""
+    topic = f"dronsar/{DRONE_ID}/comandos"
+    return _publicar(topic, command, params)
+
+
+def publicar_config(command, params):
+    """Publica un comando de configuracion de la Pi en el topic de su dominio."""
+    dominio = COMANDOS_CONFIG[command]
+    topic = f"dronsar/{DRONE_ID}/{dominio}/config"
+    return _publicar(topic, command, params)
 
 
 # =====================================================================
@@ -101,27 +122,47 @@ def command():
     datos = request.get_json(silent=True) or {}
     command = datos.get("command")
 
-    # Validaciones
-    if command not in COMANDOS_VALIDOS:
-        return jsonify({"ok": False,
-                        "error": f"Comando no valido: {command}"}), 400
+    # Comandos de vuelo: van al topic de comandos de siempre.
+    if command in COMANDOS_VALIDOS:
+        params = {}
+        if command == "takeoff":
+            altitude = datos.get("altitude")
+            if altitude is None:
+                return jsonify({"ok": False,
+                                "error": "takeoff requiere 'altitude'"}), 400
+            if altitude > ALTITUD_MAXIMA:
+                return jsonify({"ok": False,
+                                "error": f"altitud maxima {ALTITUD_MAXIMA} m"}), 400
+            params["altitude"] = altitude
 
-    params = {}
-    if command == "takeoff":
-        altitude = datos.get("altitude")
-        if altitude is None:
-            return jsonify({"ok": False,
-                            "error": "takeoff requiere 'altitude'"}), 400
-        if altitude > ALTITUD_MAXIMA:
-            return jsonify({"ok": False,
-                            "error": f"altitud maxima {ALTITUD_MAXIMA} m"}), 400
-        params["altitude"] = altitude
+        mensaje, publicado = publicar_comando(command, params)
+        if publicado:
+            return jsonify({"ok": True, "enviado": mensaje})
+        return jsonify({"ok": False, "error": "No se pudo publicar"}), 500
 
-    # Publicar
-    mensaje, publicado = publicar_comando(command, params)
-    if publicado:
-        return jsonify({"ok": True, "enviado": mensaje})
-    return jsonify({"ok": False, "error": "No se pudo publicar"}), 500
+    # Comandos de configuracion de la Pi: cada uno a su topic de dominio.
+    if command in COMANDOS_CONFIG:
+        params = {}
+        if command == "set_sensor_interval":
+            interval = datos.get("interval_seconds")
+            if interval is None or interval <= 0:
+                return jsonify({"ok": False,
+                                "error": "set_sensor_interval requiere 'interval_seconds' > 0"}), 400
+            params["interval_seconds"] = interval
+        elif command == "set_video_throttle":
+            throttle = datos.get("throttle_ms")
+            if throttle is None or throttle < 0:
+                return jsonify({"ok": False,
+                                "error": "set_video_throttle requiere 'throttle_ms' >= 0"}), 400
+            params["throttle_ms"] = throttle
+
+        mensaje, publicado = publicar_config(command, params)
+        if publicado:
+            return jsonify({"ok": True, "enviado": mensaje})
+        return jsonify({"ok": False, "error": "No se pudo publicar"}), 500
+
+    return jsonify({"ok": False,
+                    "error": f"Comando no valido: {command}"}), 400
 
 
 # =====================================================================

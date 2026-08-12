@@ -10,14 +10,14 @@ Recibe los mensajes que publican los nodos edge por MQTT y los escribe
 en InfluxDB. Es GENÉRICO respecto al dominio: no conoce de antemano los
 campos de cada tipo de dato, sino que los deduce del topic y del JSON.
 
-Convención de topics:   sar/{dron_id}/{dominio}
+Convención de topics:   dronsar/{dron_id}/{dominio}
     - el {dominio} determina la MEASUREMENT (ambiental, sistema, vuelo,
       deteccion...)
     - el {dron_id} se guarda como TAG (indexado), para poder filtrar y
       agrupar por dron de forma eficiente.
 
 Al ser genérico, añadir un dominio nuevo NO obliga a tocar este puente:
-basta con que el nodo edge publique en sar/{dron_id}/{nuevo_dominio}.
+basta con que el nodo edge publique en dronsar/{dron_id}/{nuevo_dominio}.
 """
 
 import json
@@ -40,7 +40,7 @@ INFLUX_BUCKET = os.getenv("INFLUX_BUCKET")
 MQTT_BROKER = os.getenv("MQTT_BROKER", "localhost")
 MQTT_PORT = int(os.getenv("MQTT_PORT", 1883))
 # Comodín que capta TODOS los drones y TODOS los dominios de una vez.
-MQTT_TOPIC = os.getenv("MQTT_TOPIC", "sar/#")
+MQTT_TOPIC = os.getenv("MQTT_TOPIC", "dronsar/#")
 
 # Clave del JSON que representa el instante de captura. No es un campo:
 # se usa como marca temporal del punto en InfluxDB.
@@ -92,10 +92,10 @@ def _anadir_campos(point, payload, prefijo=""):
 def construir_punto(topic, payload):
     """Traduce un mensaje (topic + JSON) a un Point de InfluxDB.
 
-    Devuelve None si el topic no sigue la convención sar/{dron_id}/{dominio}.
+    Devuelve None si el topic no sigue la convención dronsar/{dron_id}/{dominio}.
     """
     partes = topic.split("/")
-    if len(partes) != 3 or partes[0] != "sar":
+    if len(partes) != 3 or partes[0] != "dronsar":
         return None
     _, dron_id, dominio = partes
 
@@ -148,7 +148,7 @@ if __name__ == "__main__":
     mqtt_client.on_connect = on_connect
     mqtt_client.on_message = on_message
 
-    print("Arrancando script puente (sar/# -> InfluxDB)...")
+    print("Arrancando script puente (dronsar/# -> InfluxDB)...")
     mqtt_client.connect(MQTT_BROKER, MQTT_PORT, 60)
 
     # Mantener el script corriendo permanentemente
