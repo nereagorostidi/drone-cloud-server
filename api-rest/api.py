@@ -39,7 +39,13 @@ load_dotenv()
 
 MQTT_BROKER = os.getenv("MQTT_BROKER", "localhost")
 MQTT_PORT = int(os.getenv("MQTT_PORT", 1883))
-DRONE_ID = os.getenv("DRONE_ID", "dron-01")
+DRONE_ID = os.getenv("DRONE_ID", "dron-02")
+
+# Drones que existen de verdad (deben coincidir con el desplegable de la web).
+# No es autenticacion: es solo para que un drone_id mal escrito o con
+# caracteres de MQTT (/, +, #) no acabe formando un topic distinto al
+# esperado o publicando fuera del namespace "dronsar/...".
+DRONES_VALIDOS = {"dron-01", "dron-02"}
 
 # Comandos permitidos (deben coincidir con los del receptor.py)
 COMANDOS_VALIDOS = {"arm", "disarm", "takeoff", "land", "rtl", "hold",
@@ -64,12 +70,12 @@ mqtt_client.connect(MQTT_BROKER, MQTT_PORT, 60)
 mqtt_client.loop_start()
 
 
-def _publicar(topic, command, params):
+def _publicar(topic, command, params, drone_id):
     """Construye el JSON y lo publica en el topic indicado."""
     mensaje = {
         "command": command,
         "params": params,
-        "drone_id": DRONE_ID,
+        "drone_id": drone_id,
         "command_id": uuid.uuid4().hex[:6],
         "timestamp": datetime.now().astimezone().isoformat(),
     }
@@ -78,17 +84,17 @@ def _publicar(topic, command, params):
     return mensaje, info.is_published()
 
 
-def publicar_comando(command, params):
+def publicar_comando(command, params, drone_id):
     """Publica un comando de vuelo en su topic de siempre."""
-    topic = f"dronsar/{DRONE_ID}/comandos"
-    return _publicar(topic, command, params)
+    topic = f"dronsar/{drone_id}/comandos"
+    return _publicar(topic, command, params, drone_id)
 
 
-def publicar_config(command, params):
+def publicar_config(command, params, drone_id):
     """Publica un comando de configuracion de la Pi en el topic de su dominio."""
     dominio = COMANDOS_CONFIG[command]
-    topic = f"dronsar/{DRONE_ID}/{dominio}/config"
-    return _publicar(topic, command, params)
+    topic = f"dronsar/{drone_id}/{dominio}/config"
+    return _publicar(topic, command, params, drone_id)
 
 
 # =====================================================================
@@ -121,6 +127,10 @@ def command():
 
     datos = request.get_json(silent=True) or {}
     command = datos.get("command")
+    drone_id = datos.get("drone_id") or DRONE_ID
+
+    if drone_id not in DRONES_VALIDOS:
+        return jsonify({"ok": False, "error": f"drone_id no valido: {drone_id}"}), 400
 
     # Comandos de vuelo: van al topic de comandos de siempre.
     if command in COMANDOS_VALIDOS:
@@ -135,7 +145,7 @@ def command():
                                 "error": f"altitud maxima {ALTITUD_MAXIMA} m"}), 400
             params["altitude"] = altitude
 
-        mensaje, publicado = publicar_comando(command, params)
+        mensaje, publicado = publicar_comando(command, params, drone_id)
         if publicado:
             return jsonify({"ok": True, "enviado": mensaje})
         return jsonify({"ok": False, "error": "No se pudo publicar"}), 500
@@ -156,7 +166,7 @@ def command():
                                 "error": "set_video_throttle requiere 'throttle_ms' >= 0"}), 400
             params["throttle_ms"] = throttle
 
-        mensaje, publicado = publicar_config(command, params)
+        mensaje, publicado = publicar_config(command, params, drone_id)
         if publicado:
             return jsonify({"ok": True, "enviado": mensaje})
         return jsonify({"ok": False, "error": "No se pudo publicar"}), 500
