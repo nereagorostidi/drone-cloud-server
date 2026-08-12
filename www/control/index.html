@@ -88,6 +88,37 @@
       </div>
     </div>
 
+    <!-- ============ GRUPO: SISTEMA (Raspberry Pi) ============ -->
+    <!-- Comandos que no controlan el vuelo, sino la propia Raspberry Pi y
+         los parámetros de sus servicios (sensor, vídeo). De momento estos
+         comandos solo se ENVÍAN a la API; falta que la Pi (otro repo) los
+         atienda de verdad. -->
+    <div class="grupo">
+      <h2>Sistema (Raspberry Pi)</h2>
+
+      <div class="fila">
+        <!-- Apaga la Raspberry Pi. Es una acción irreversible desde la web
+             (habría que ir físicamente a reiniciarla), así que usamos el
+             estilo "b-danger" como en Desarmar. -->
+        <button class="b-danger" onclick="apagarPi()">Apagar Raspberry Pi</button>
+      </div>
+
+      <!-- Intervalo de envío del sensor: cada cuántos segundos el "modo
+           sensor" manda datos. Parametrizable: se escribe un número y se
+           envía como dato extra junto al comando. -->
+      <div class="takeoff">
+        <input id="sensorInterval" type="number" value="60" min="1" step="1" aria-label="Intervalo de envío del sensor en segundos">
+        <button class="b-neutral" style="flex:1" onclick="setSensorInterval()">Intervalo sensor (s)</button>
+      </div>
+
+      <!-- Throttling de vídeo: cada cuánto tiempo (o a qué límite) se envían
+           los fotogramas/streaming de vídeo. También parametrizable. -->
+      <div class="takeoff">
+        <input id="videoThrottle" type="number" value="500" min="0" step="10" aria-label="Throttling de vídeo en milisegundos">
+        <button class="b-neutral" style="flex:1" onclick="setVideoThrottle()">Throttling vídeo (ms)</button>
+      </div>
+    </div>
+
     <!-- Registro de comandos: aquí el JavaScript irá escribiendo lo que se envía
          y las respuestas. Empieza con un texto gris de aviso. -->
     <div class="log" id="log"><span class="t">Registro de comandos…</span></div>
@@ -148,6 +179,30 @@
       const alt = parseFloat(document.getElementById('alt').value);  // lee el número
       if (isNaN(alt)){ anota('✗ altitud no válida', 'l-err'); return; }  // valida
       enviar('takeoff', {altitude: alt});   // envía takeoff con la altitud como dato extra
+    }
+
+    // Botón "Apagar Raspberry Pi": pide confirmación (es irreversible desde
+    // la web) y envía el comando 'shutdown'. La Pi aún no lo atiende: eso
+    // se conecta en el repo de la Pi más adelante.
+    function apagarPi(){
+      if (!confirm('¿Seguro que quieres apagar la Raspberry Pi?')) return;
+      enviar('shutdown');
+    }
+
+    // Botón "Intervalo sensor (s)": lee el intervalo en segundos y lo envía
+    // como dato extra junto al comando 'set_sensor_interval'.
+    function setSensorInterval(){
+      const seg = parseFloat(document.getElementById('sensorInterval').value);
+      if (isNaN(seg) || seg <= 0){ anota('✗ intervalo no válido', 'l-err'); return; }
+      enviar('set_sensor_interval', {interval_seconds: seg});
+    }
+
+    // Botón "Throttling vídeo (ms)": lee el throttling en milisegundos y lo
+    // envía como dato extra junto al comando 'set_video_throttle'.
+    function setVideoThrottle(){
+      const ms = parseFloat(document.getElementById('videoThrottle').value);
+      if (isNaN(ms) || ms < 0){ anota('✗ throttling no válido', 'l-err'); return; }
+      enviar('set_video_throttle', {throttle_ms: ms});
     }
 
   </script>
