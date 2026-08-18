@@ -46,6 +46,19 @@
     <h1>Control <span class="sar">·</span> dron</h1>  <!-- título; el <span> colorea el punto -->
     <div class="sub">Panel de teleoperación (simulación)</div>  <!-- subtítulo -->
 
+    <!-- ============ GRUPO: DRON ============ -->
+    <!-- Desplegable para elegir a qué dron van dirigidos los comandos.
+         Su valor se lee en cada envío y se manda como "drone_id". -->
+    <div class="grupo">
+      <h2>Dron</h2>
+      <div class="fila">
+        <select id="droneId" aria-label="Dron seleccionado">
+          <option value="dron-01">dron-01</option>
+          <option value="dron-02">dron-02</option>
+        </select>
+      </div>
+    </div>
+
     <!-- ============ GRUPO: MOTORES ============ -->
     <!-- Cada "grupo" es una sección de botones con su título. -->
     <div class="grupo">
@@ -151,9 +164,11 @@
     // Función principal: envía un comando a la API.
     // 'command' es la acción (arm, disarm...); 'extra' son datos opcionales (p. ej. altitud).
     async function enviar(command, extra){
-      // Junta el comando con los datos extra en un solo objeto.
-      const cuerpo = Object.assign({command}, extra || {});
-      anota(`→ ${command}`, 'l-cmd');   // deja constancia en el registro
+      // Lee el dron elegido en el desplegable y lo añade al cuerpo,
+      // junto con el comando y los datos extra.
+      const droneId = document.getElementById('droneId').value;
+      const cuerpo = Object.assign({command, drone_id: droneId}, extra || {});
+      anota(`→ [${droneId}] ${command}`, 'l-cmd');   // deja constancia en el registro
 
       try {
         // fetch = hace la petición HTTP a la API (POST al endpoint /command).
