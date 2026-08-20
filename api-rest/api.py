@@ -59,6 +59,8 @@ COMANDOS_CONFIG = {
     "shutdown": "sistema",
     "set_sensor_interval": "sensor",
     "set_video_throttle": "deteccion",
+    "start_recording": "deteccion",
+    "stop_recording": "deteccion",
 }
 
 
