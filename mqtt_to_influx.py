@@ -23,9 +23,10 @@ write_api = influx_client.write_api(write_options=SYNCHRONOUS)
 MQTT_BROKER = os.getenv("MQTT_BROKER", "localhost")
 MQTT_PORT = int(os.getenv("MQTT_PORT", 1883))
 # Un único topic con comodín cubre TODOS los drones y TODOS los dominios.
-#   dronsar/{dron_id}/{dominio}
-# Los topics de configuración (dronsar/{dron_id}/{dominio}/config) tienen un
-# nivel más y se descartan automáticamente (ver on_message).
+#   dronsar/{dron_id}/{dominio}                  (ej: sistema, sensor, deteccion)
+#   dronsar/{dron_id}/{dominio}/{subdominio}      (ej: deteccion/sesion, video/resumen)
+# El unico caso que se descarta a proposito es el que termina en "config"
+# (dronsar/{dron_id}/{dominio}/config): son comandos hacia la Pi, no telemetria.
 MQTT_TOPIC = os.getenv("MQTT_TOPIC", "dronsar/#")
 
 
@@ -61,12 +62,17 @@ def on_connect(client, userdata, flags, rc, properties=None):
 def on_message(client, userdata, msg):
     try:
         partes = msg.topic.split("/")
-        # Solo ingerimos telemetría: dronsar/{dron_id}/{dominio} -> 3 niveles.
-        # Los topics de config (.../config) tienen 4 y se descartan.
-        if len(partes) != 3:
+        # dronsar/{dron_id}/{dominio}[/{subdominio}] -> al menos 3 niveles.
+        if len(partes) < 3 or partes[0] != "dronsar":
+            return
+        # Los comandos de configuracion de la Pi (.../config) no son telemetria.
+        if partes[-1] == "config":
             return
 
-        _, dron_id, dominio = partes
+        dron_id = partes[1]
+        # Si hay subdominio (ej: deteccion/sesion), la measurement junta
+        # ambos niveles: "deteccion_sesion". Si no, es solo "sistema", etc.
+        dominio = "_".join(partes[2:])
         payload = json.loads(msg.payload.decode("utf-8"))
 
         # El timestamp se usa como tiempo del punto, no como campo.

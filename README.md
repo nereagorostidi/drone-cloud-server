@@ -15,6 +15,13 @@ Incluye además las páginas web del proyecto, el panel de control y la API REST
 ## Flujo de comandos
 El panel de control envía órdenes al dron (armar, desarmar, despegar…) a través de esta cadena:`api.py` y `comandos.py` son dos emisores en paralelo (web y terminal) que hacen lo mismo: publicar el comando en MQTT. `receptor.py`, suscrito al topic, lo traduce a MAVLink y lo envía al autopiloto. Mission Planner, conectado también al autopiloto, refleja lo que ocurre.
 
+## Convención de topics MQTT
+Todo lo que viaja por MQTT sigue el prefijo `dronsar/{dron_id}/...`:
+
+- **Telemetría** (la ingiere `mqtt_to_influx.py`): `dronsar/{dron_id}/{dominio}` o `dronsar/{dron_id}/{dominio}/{subdominio}` — ej. `dronsar/dron01/sistema`, `dronsar/dron01/video/resumen`. El `dron_id` se guarda como tag y el resto del path (`dominio` + `subdominio` unidos por `_`) es la measurement en InfluxDB. Añadir un dominio nuevo no requiere tocar el puente: basta con que el nodo edge publique ahí.
+- **Comandos hacia la Pi**: `dronsar/{dron_id}/{dominio}/config` — el sufijo `config` es especial y `mqtt_to_influx.py` lo excluye siempre (no es telemetría, es una orden).
+- Cada mensaje de telemetría, si incluye una clave `timestamp` (ISO 8601), se usa como hora del punto en InfluxDB; si no la trae, se usa la hora de llegada del mensaje.
+
 ## Requisitos
 - Python 3.10+
 - Mosquitto y InfluxDB corriendo en el EC2
