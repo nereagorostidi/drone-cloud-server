@@ -88,6 +88,18 @@
       </div>
     </div>
 
+    <!-- ============ GRUPO: CÁMARA ============ -->
+    <!-- Empezar/parar la grabación de vídeo con la cámara del dron.
+         De momento solo se ENVÍA el comando a la API; falta decidir cómo
+         lo atiende el nodo edge (siguiente paso, junto contigo). -->
+    <div class="grupo">
+      <h2>Cámara</h2>
+      <div class="fila">
+        <button class="b-ok" onclick="enviar('start_recording')">Empezar grabación</button>
+        <button class="b-danger" onclick="enviar('stop_recording')">Parar grabación</button>
+      </div>
+    </div>
+
     <!-- ============ GRUPO: SISTEMA (Raspberry Pi) ============ -->
     <!-- Comandos que no controlan el vuelo, sino la propia Raspberry Pi y
          los parámetros de sus servicios (sensor, vídeo). De momento estos
