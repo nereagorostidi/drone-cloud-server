@@ -19,6 +19,28 @@
   <title>Drone-SAR · Control</title>
   <!-- El texto que aparece en la pestaña del navegador. -->
 
+  <!-- ===== PWA: manifest + iconos + color de tema =====
+       El manifest.json describe la "app" (nombre, iconos, modo standalone).
+       Es lo que hace aparecer el botón/opción "Instalar" en el navegador. -->
+  <link rel="manifest" href="manifest.json">
+
+  <!-- Icono que usan Android/Chrome al instalar (y como favicon en pestaña). -->
+  <link rel="icon" href="icons/favicon.png" type="image/png">
+
+  <!-- iOS no lee el manifest.json para el icono de pantalla de inicio:
+       necesita este link aparte, con imagen SIN transparencia. -->
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+
+  <!-- Color de la barra de estado/navegador cuando la app está instalada
+       (mismo tono que el fondo de la página, para que no "salte"). -->
+  <meta name="theme-color" content="#0D0C0A">
+
+  <!-- Le dice a iOS que esta página se puede abrir como app a pantalla
+       completa (sin la barra de Safari) al añadirla al inicio. -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Drone-SAR">
+
   <!-- Precarga de las fuentes de Google (mejora un poco la velocidad de descarga). -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -233,6 +255,19 @@
       const ms = parseFloat(document.getElementById('videoThrottle').value);
       if (isNaN(ms) || ms < 0){ anota('✗ throttling no válido', 'l-err'); return; }
       enviar('set_video_throttle', {throttle_ms: ms});
+    }
+
+    // === Registro del Service Worker (PWA) ===
+    // Comprueba que el navegador soporte service workers (todos los
+    // modernos lo hacen) y, si es así, le pide que registre 'sw.js'.
+    // A partir de ahí el propio navegador se encarga de instalarlo,
+    // cachear el app shell y mantenerlo actualizado.
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js')
+          .then(() => anota('Service worker registrado (modo offline activo)', 'l-ok'))
+          .catch(() => anota('No se pudo registrar el service worker', 'l-err'));
+      });
     }
 
   </script>
