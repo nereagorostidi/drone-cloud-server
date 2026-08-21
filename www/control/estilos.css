@@ -277,6 +277,31 @@ button:focus-visible{
 
 
 /* ---------------------------------------------------------------------
+   VÍDEO EN DIRECTO (streaming edge AI)
+   El iframe viene con width/height fijos (640x360) desde el proveedor
+   del stream, pero aquí lo forzamos a ser responsive: en vez de esos
+   píxeles fijos, .video-wrap reserva el hueco con aspect-ratio 16:9 y
+   el iframe se estira dentro con position:absolute + inset:0.
+   --------------------------------------------------------------------- */
+.video-wrap{
+  position:relative;
+  width:100%;
+  aspect-ratio:16/9;
+  background:var(--surface-2);
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  overflow:hidden;
+}
+.video-wrap iframe{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  border:0;
+}
+
+
+/* ---------------------------------------------------------------------
    REGISTRO DE COMANDOS (el recuadro de abajo)
    Superficie "hundida", a diferencia de las tarjetas de control (que
    están en relieve): así se lee como una lectura pasiva, no un mando.

@@ -71,6 +71,21 @@
     <div class="sub">Panel de teleoperación (simulación)</div>  <!-- subtítulo -->
     <div class="hazard" aria-hidden="true"></div>  <!-- franja decorativa tipo cinta de baliza -->
 
+    <!-- ============ GRUPO: VÍDEO EN DIRECTO ============ -->
+    <!-- Transmisión en directo de la cámara del dron (procesada por el
+         nodo edge). El iframe apunta a otro subdominio (stream.gorostiditfg.com);
+         .video-wrap en estilos.css lo hace responsive (ver comentario allí). -->
+    <div class="grupo">
+      <h2>Vídeo en directo (Edge AI)</h2>
+      <div class="video-wrap">
+        <iframe src="https://stream.gorostiditfg.com/dron_live"
+                title="Transmisión en directo del dron"
+                allow="autoplay; fullscreen"
+                allowfullscreen>
+        </iframe>
+      </div>
+    </div>
+
     <!-- ============ GRUPO: DRON ============ -->
     <!-- Desplegable para elegir a qué dron van dirigidos los comandos.
          Su valor se lee en cada envío y se manda como "drone_id". -->
