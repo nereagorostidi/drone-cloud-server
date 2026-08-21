@@ -71,21 +71,6 @@
     <div class="sub">Panel de teleoperación (simulación)</div>  <!-- subtítulo -->
     <div class="hazard" aria-hidden="true"></div>  <!-- franja decorativa tipo cinta de baliza -->
 
-    <!-- ============ GRUPO: VÍDEO EN DIRECTO ============ -->
-    <!-- Transmisión en directo de la cámara del dron (procesada por el
-         nodo edge). El iframe apunta a otro subdominio (stream.gorostiditfg.com);
-         .video-wrap en estilos.css lo hace responsive (ver comentario allí). -->
-    <div class="grupo">
-      <h2>Vídeo en directo (Edge AI)</h2>
-      <div class="video-wrap">
-        <iframe src="https://stream.gorostiditfg.com/dron_live"
-                title="Transmisión en directo del dron"
-                allow="autoplay; fullscreen"
-                allowfullscreen>
-        </iframe>
-      </div>
-    </div>
-
     <!-- ============ GRUPO: DRON ============ -->
     <!-- Desplegable para elegir a qué dron van dirigidos los comandos.
          Su valor se lee en cada envío y se manda como "drone_id". -->
@@ -142,12 +127,21 @@
     </div>
 
     <!-- ============ GRUPO: CÁMARA ============ -->
-    <!-- Empezar/parar la grabación de vídeo con la cámara del dron.
-         De momento solo se ENVÍA el comando a la API; falta decidir cómo
-         lo atiende el nodo edge (siguiente paso, junto contigo). -->
+    <!-- Vídeo en directo (streaming del nodo edge) + empezar/parar grabación.
+         El vídeo va aquí porque son la misma "fuente": lo que ves en el
+         iframe es la misma cámara que arman/paran estos botones. Los
+         botones, de momento, solo ENVÍAN el comando a la API; falta decidir
+         cómo lo atiende el nodo edge (siguiente paso, junto contigo). -->
     <div class="grupo">
       <h2>Cámara</h2>
-      <div class="fila">
+      <div class="video-wrap">
+        <iframe src="https://stream.gorostiditfg.com/dron_live"
+                title="Transmisión en directo del dron"
+                allow="autoplay; fullscreen"
+                allowfullscreen>
+        </iframe>
+      </div>
+      <div class="fila" style="margin-top:14px">
         <button class="b-ok" onclick="enviar('start_recording')">Empezar grabación</button>
         <button class="b-danger" onclick="enviar('stop_recording')">Parar grabación</button>
       </div>
