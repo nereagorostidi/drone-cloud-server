@@ -87,7 +87,7 @@
   <div class="statusbar">
     <span class="live"><span class="dot"></span>SISTEMA OPERATIVO</span>
     <span class="sep">·</span>
-    <span>ÚLT. ACTUALIZACIÓN: 20/07/2026</span>
+    <span>ÚLT. ACTUALIZACIÓN: 7/08/2026</span>
     <nav class="nav">
       <a href="journal.html" class="here">Diario</a>
       <a href="todo.html">Pendientes</a>
@@ -107,14 +107,14 @@
 
   <section class="estado">
     <div class="estado-head">
-      <span class="fecha">Situación actual · 20 jul 2026</span>
+      <span class="fecha">Situación actual · 7 ago 2026</span>
       <h2>Dónde está el proyecto ahora</h2>
     </div>
-    <p>El proyecto tiene ya resuelta toda la base sobre la que se construirá el resto del sistema. Está cerrada la <b>parte normativa</b> —certificado de piloto A1/A3 y número de operador AESA— y el acceso a un <b>espacio de vuelo seguro</b>, gracias a la federación en el club Alas de Galapagar, cuya licencia de socio incluye el seguro obligatorio. He realizado además un <b>primer vuelo de referencia</b>, cuyo registro GPS me sirve para planificar misiones en simulación.</p>
-    <p>En el plano técnico, la <b>infraestructura extremo a extremo está operativa</b>: el nodo <i>edge</i> (Raspberry Pi 5 con el sensor ambiental BME680) publica sus lecturas por MQTT hacia el servidor en la nube (AWS EC2 con Mosquitto e InfluxDB), con almacenamiento intermedio local para no perder datos ante cortes de red. El dominio y los servidores web están en marcha y todas las páginas se sirven ya por <b>HTTPS</b> con certificado propio.</p>
-    <p>En cuanto al vuelo, he llevado el <b>control autónomo de la simulación a la Raspberry Pi</b>: la Pi comanda el dron simulado (Mission Planner + ArduPilot SITL) por MAVLink a través de la red. Sobre esa base he montado el <b>control por MQTT</b> —un publicador en el EC2 y un receptor en la Pi que traduce las órdenes a MAVLink— y una <b>API REST con una página de botones</b> para teleoperar el dron (armar, despegar, aterrizar, RTL, misión) desde el navegador, ya validada contra el simulador.</p>
-    <p>El repositorio del servidor se ha <b>reorganizado por carpetas</b> para separar las páginas web, el panel de control y la API. En paralelo, un fallo de la tarjeta microSD ha dejado la Raspberry Pi temporalmente fuera de servicio, lo que ha obligado a replantear la disciplina de respaldo del código del nodo <i>edge</i>.</p>
-    <p><b>Próximos pasos:</b> resolver el bloqueo de contenido mixto que impide llamar a la API desde las páginas en HTTPS, convertir la API y el receptor en servicios <code>systemd</code>, restaurar la Raspberry Pi, avanzar hacia el montaje del dron definitivo (chasis Tarot 650) y desplegar la detección de personas por visión artificial (YOLO sobre el acelerador Hailo-8L).</p>
+    <p>El proyecto tiene ya resuelta toda la base sobre la que se construirá el resto del sistema. Está cerrada la parte normativa —certificado de piloto A1/A3 y número de operador AESA— y el acceso a un espacio de vuelo seguro, gracias a la federación en el club Alas de Galapagar, cuya licencia de socio incluye el seguro obligatorio. He realizado además un primer vuelo de referencia, cuyo registro GPS me sirve para planificar misiones en simulación.</p>
+    <p>En el plano técnico, la infraestructura extremo a extremo está operativa: el nodo <i>edge</i> (Raspberry Pi 5 con el sensor ambiental BME680) publica sus lecturas por MQTT hacia el servidor en la nube (AWS EC2 con Mosquitto e InfluxDB), con almacenamiento intermedio local para no perder datos ante cortes de red. El dominio y los servidores web están en marcha, y tanto las páginas como los servicios dinámicos (API REST e InfluxDB) se sirven ya por HTTPS con certificado propio, accediéndose a estos últimos a través de un <i>reverse proxy</i> en nginx que permite mantener cerrados sus puertos al exterior.</p>
+    <p>En cuanto al vuelo, he llevado el control autónomo de la simulación a la Raspberry Pi: la Pi comanda el dron simulado (Mission Planner + ArduPilot SITL) por MAVLink a través de la red. Sobre esa base he montado el control por MQTT —un publicador en el EC2 y un receptor en la Pi que traduce las órdenes a MAVLink— y una API REST con una página de botones para teleoperar el dron (armar, despegar, aterrizar, RTL, misión) desde el navegador, ya validada contra el simulador. Tanto la API como el receptor se ejecutan como servicios <code>systemd</code>, de modo que arrancan solos y se reinician ante cualquier interrupción.</p>
+    <p>El repositorio del servidor se ha reorganizado por carpetas para separar las páginas web, el panel de control y la API, y se trabaja ahora sobre una rama <code>develop</code> que mantiene la rama principal con la versión estable. El fallo de la tarjeta microSD que dejó temporalmente fuera de servicio a la Raspberry Pi está resuelto, se ha sustituido y repetido la instalación de la imagen, además de realizar nuevamente el <i>script</i> del receptor, ya que no estaba subido dicho código</p>
+    <p><b>Próximos pasos:</b> montar el dron definitivo, estoy a la espera respuesta correos, COMPRAR MATERIALES; y desplegar la detección de personas por visión artificial (YOLO sobre el acelerador Hailo-8L), parte en la que ya he comenzado a trabajar con Roboflow (construcción del dataset y entrenamiento del modelo en local). Queda pendiente incorporar autenticación a la API y cifrado al canal MQTT antes de conectar la cadena de mando a la aeronave real.</p>
   </section>
 
   <div class="log">
@@ -314,11 +314,193 @@
         <li><b>Lección aprendida:</b> apagar siempre la Pi con <code>sudo poweroff</code> y mantener todo actualizado en GitHub, para no perder los códigos ni el trabajo hecho hasta el momento.</li>
       </ul>
     </div>
-  <footer>
+  
+    <!-- ============ 20 JULIO ============ -->
+    <div class="phase">
+      <div class="phase-head">
+        <span class="phase-date">20 julio</span>
+      </div>
+      <ul class="tasks">
+        <li>Sustitución de la <b>tarjeta microSD</b> de la Raspberry Pi, repitiendo todo el proceso con la nueva SD:
+          <ul class="sub">
+            <li>Grabación de la imagen del sistema operativo y configuración inicial de la Raspberry (acceso por SSH, red, habilitación del bus <b>I2C</b>).</li>
+            <li>Clonado del repositorio desde GitHub y recuperación del entorno de trabajo.</li>
+            <li>Reescritura de <code>receptor.py</code>, único script que no estaba subido al repositorio y que se perdió con la tarjeta.</li>
+          </ul>
+        </li>
+        <li>Actualización del <b>README</b> y publicación de los cambios en GitHub.</li>
+      </ul>
+    </div>
+
+    <!-- ============ 21 JULIO ============ -->
+    <div class="phase">
+      <div class="phase-head">
+        <span class="phase-date">21 julio</span>
+      </div>
+      <ul class="tasks">
+        <li>Revisión de todo lo realizado hasta el momento y comienzo de la redacción en la <b>memoria del TFG</b> de la arquitectura diseñada: capítulo 5, apartado 5.4 (<i>Arquitectura IoT con AWS EC2 y Mosquitto</i>):
+          <ul class="sub">
+            <li>Infraestructura de la instancia EC2.</li>
+            <li>Sensor <b>BME680</b>.</li>
+            <li>Flujo de datos con arquitectura <b>store-and-forward</b>.</li>
+            <li>Almacenamiento en <b>InfluxDB</b>.</li>
+            <li>Ejecución autónoma mediante <b>systemd</b>.</li>
+          </ul>
+        </li>
+        <li>Revisión del estado de los <b>certificados TLS</b> de los subdominios para identificar cuáles quedaban pendientes de configurar.</li>
+        <li><b>Resuelto el problema de <i>mixed content</i></b>: creado el subdominio <code>api.gorostiditfg.com</code>, configurado nginx como <i>reverse proxy</i> hacia <code>localhost:5000</code>, emitido el certificado TLS y actualizada la URL del <code>fetch</code> en el panel de control.</li>
+        <li>Eliminada la regla del <b>puerto 5000</b> del grupo de seguridad de la instancia, ya innecesaria al accederse a la API a través del <i>reverse proxy</i> de nginx.</li>
+      </ul>
+    </div>
+    
+    <!-- ============ 22 JULIO ============ -->
+    <div class="phase">
+      <div class="phase-head">
+        <span class="phase-date">22 julio</span>
+      </div>
+      <ul class="tasks">
+        <li>Creación de los <b>servicios systemd</b> para <code>receptor.py</code> en la Raspberry Pi y para <code>api.py</code> en la instancia EC2, de forma que ambos arranquen automáticamente y se reinicien ante cualquier interrupción, sin depender de una sesión SSH abierta.</li>
+        <li>Continuación de la redacción del <b>capítulo 5</b> de la memoria: infraestructura de servicios web y control remoto, y simulación <b>SITL</b> con ArduPilot.</li>
+        <li>Instalación y prueba de <b>Claude Code</b>, para desarrollar una interfaz web más completa y con mayor número de funcionalidades.</li>
+      </ul>
+    </div>
+   <!-- ============ 27 JULIO ============ -->
+    <div class="phase">
+      <div class="phase-head">
+        <span class="phase-date">27 julio</span>
+      </div>
+      <ul class="tasks">
+        <li>Reorganización estructural de la memoria: división del antiguo <b>capítulo 5</b> en <b>capítulo 5</b> (control de vuelo y telemetría: MAVLink, GCS, pymavlink, SITL, FPV) y <b>capítulo 6</b> (arquitectura IoT: EC2, BME680, MQTT, servicios web).</li>
+        <li>Reconstrucción del <b>capítulo 2 (estado del arte)</b>:
+          <ul class="sub">
+            <li>2.1 UAV en SAR · 2.2 Comunicaciones más allá de la línea de visión (BVLOS) · 2.3 Detección de personas con YOLO.</li>
+            <li>Reubicación del contenido mal colocado: comparativa de chasis &rarr; 4.2.1; fusión IMU/GPS/Kalman &rarr; 4.2.2; justificación de MQTT/EC2 &rarr; 6.3; detalles de FPV &rarr; 5.5.</li>
+          </ul>
+        </li>
+      </ul>
+    </div>
+
+    <!-- ============ 28 JULIO ============ -->
+    <div class="phase">
+      <div class="phase-head">
+        <span class="phase-date">28 julio</span>
+      </div>
+      <ul class="tasks">
+        <li>Redacción del <b>capítulo 3 (normativa)</b>, secciones 3.1&ndash;3.4 y 3.6: Reglamento (UE) 2019/947, categoría abierta A3, <i>Remote ID</i> obligatorio desde enero de 2026, RD 517/2024, sentencia del TS de junio de 2025, doble registro (operador AESA + aeronave) y Ley 11/2022.</li>
+        <li>Mensaje al tutor (<b>Dani</b>) para preguntar por la posible financiación de la universidad para los materiales del dron. <span class="cost">PENDIENTE de respuesta</span></li>
+      </ul>
+    </div>
+
+    <!-- ============ 29 JULIO ============ -->
+    <div class="phase">
+      <div class="phase-head">
+        <span class="phase-date">29 julio</span>
+      </div>
+      <ul class="tasks">
+        <li>Revisión de la arquitectura del sistema de cara al <b>capítulo 4</b> (apartado 4.1): repaso del diseño extremo a extremo y preparación del esquema de arquitectura (queda a medias, se continuará).</li>
+        <li>Construcción de la <b>bibliografía</b> en formato <b>IEEE</b>, según la guía de la biblioteca de la UC3M, para los capítulos ya redactados (normativa y estado del arte).</li>
+      </ul>
+    </div>
+
+    <!-- ============ 30 JULIO ============ -->
+    <div class="phase">
+      <div class="phase-head">
+        <span class="phase-date">30 julio</span>
+      </div>
+      <ul class="tasks">
+        <li>Primer contacto con <b>Roboflow</b> de cara a construir el dataset y entrenar <b>YOLOv8</b> para el <b>Hailo-8L</b>: investigación, tutoriales y pruebas de anotación para entender cómo funciona, ver la división de los datos y qué es la <i>augmentation</i>.</li>
+      </ul>
+    </div>
+
+    <!-- ============ 5 AGOSTO ============ -->
+    <div class="phase">
+      <div class="phase-head">
+        <span class="phase-date">5 agosto</span>
+      </div>
+      <ul class="tasks">
+        <li>Un socio del club de Galapagar me presta un <b>hexacóptero de fibra de carbono</b> para reutilizar piezas.</li>
+        <li>Análisis de las piezas del dron prestado:
+          <ul class="sub">
+            <li><b>Reutilizables:</b> chasis de fibra de carbono, 6 motores <b>T-Motor MN3110-780KV</b>, ESCs, hélices de carbono, tren de aterrizaje, receptor <b>FlySky FS-iA10B</b> y conectores.</li>
+            <li><b>No reutilizables:</b> controladora <b>DJI NAZA-M Lite</b> (propietaria, incompatible con ArduPilot/MAVLink), GPS DJI, cadena FPV analógica y PDB (sin confirmar).</li>
+          </ul>
+        </li>
+        <li>Comparativa de opciones de compra:
+          <ul class="sub">
+            <li><b>Plan A</b> (reutilizar piezas): ~545&ndash;550 &euro; en componentes nuevos.</li>
+            <li><b>Plan B</b> (kit nuevo Holybro X500 v2 con Pixhawk 6X): ~943 &euro; y agotado. Se opta por el Plan A.</li>
+          </ul>
+        </li>
+        <li>Elaboración de la <b>lista de compra</b> de componentes nuevos: Pixhawk 6C + PM02, GPS Holybro M10, radio de telemetría 433 MHz, batería LiPo 6S, cargador iMAX B6AC, emisora FlySky FS-i6X y consumibles de montaje.
+          <ul class="sub">
+            <li>La Raspberry Pi 5 + Hailo requiere un <b>UBEC dedicado de &ge;5 A</b> (el BEC del PDB no basta).</li>
+          </ul>
+        </li>
+        <li>Al estar el kit agotado, llamada a <b>RC-Innovations</b>; me indican mandar un correo para <b>reservar el kit</b>, que tendrán disponible la próxima semana.</li>
+      </ul>
+    </div>
+
+    <!-- ============ 6 AGOSTO ============ -->
+    <div class="phase">
+      <div class="phase-head">
+        <span class="phase-date">6 agosto</span>
+      </div>
+      <ul class="tasks">
+        <li>Envío del <b>correo a RC-Innovations</b> pidiendo disponibilidad y presupuesto de los componentes.</li>
+        <li>Primera <b>práctica completa con Roboflow</b> para entender de primera mano cómo funciona la herramienta y el flujo de trabajo de un detector YOLO de principio a fin, sobre un caso de prueba sencillo (detección de frutas):
+          <ul class="sub">
+            <li>Preparación del <b>entorno de trabajo en local</b> (Python, VS Code y Claude Code) y comprobación de que todo ejecuta correctamente.</li>
+            <li>Partiendo de un <b>dataset público</b> de Roboflow Universe, he añadido <b>fotos propias</b> y las he etiquetado a mano (<i>bounding boxes</i>) para personalizar el conjunto.</li>
+            <li>Aplicación del <b>preprocesado</b> y el <i>augmentation</i>, y generación de la versión final del dataset.</li>
+            <li>Descarga del dataset y <b>entrenamiento de un modelo YOLO en local</b> con Ultralytics, obteniendo el modelo entrenado (<code>best.pt</code>).</li>
+          </ul>
+        </li>
+        <li>Con esto he cubierto todo el proceso hasta obtener el modelo. El <b>siguiente paso</b> es probar el modelo entrenado sobre <b>vídeo</b> (inferencia), para ver las detecciones en imágenes en movimiento y comprobar si detecta correctamente cada fruta.</li>
+      </ul>
+    </div>
+ <!-- ============ 7 AGOSTO ============ -->
+    <div class="phase">
+      <div class="phase-head">
+        <span class="phase-date">7 agosto</span>
+      </div>
+      <ul class="tasks">
+        <li>Partiendo del modelo entrenado el día anterior, he profundizado en el ajuste del entrenamiento probando distintos números de épocas:
+          <ul class="sub">
+            <li>Primera prueba con 15 épocas: insuficiente.</li>
+            <li>Ampliación a 80 épocas con parada temprana (<code>patience=20</code>); la métrica de validación se estabiliza en torno a la época 40, por lo que ese número resulta suficiente para la convergencia.</li>
+          </ul>
+        </li>
+        <li>He medido el coste real del entrenamiento en local: ha tardado <b>2 h 40 min</b> ejecutándose sobre CPU, a pesar de tratarse de un modelo ligero y un dataset pequeño (~300 imágenes con aumentación). Este dato es una referencia clave de cara al proyecto: al ser el dataset real de personas mucho mayor y más complejo, su entrenamiento tendrá que realizarse en la nube.</li>
+        <li>He realizado la <b>inferencia sobre vídeo</b> que quedaba pendiente, guardando el resultado anotado en <code>output.mp4</code>. La he probado tanto con un vídeo grabado con el móvil como con uno grabado desde el dron.</li>
+        <li>Revisión de resultados: analizando las curvas de aprendizaje y la matriz de confusión he visto que el modelo confunde con cierta frecuencia manzana y pera, por tratarse de clases visualmente parecidas y un dataset reducido.</li>
+        <li>Publicación de todo el código en un repositorio de <b>GitHub</b>, con su README documentando el flujo, los parámetros de entrenamiento e inferencia y las limitaciones observadas: <a href="https://github.com/nereagorostidi/yolo-pipeline-test" target="_blank" rel="noopener">github.com/nereagorostidi/yolo-pipeline-test</a></li>
+      </ul>
+    </div>
+  <!-- ============ 8 AGOSTO ============ -->
+  <div class="phase">
+    <div class="phase-head">
+      <span class="phase-date">8 agosto</span>
+    </div>
+    <ul class="tasks">
+      <li>Recepción de la respuesta de <b>RC-Innovations</b> por correo con el <b>presupuesto total</b>. Contestación confirmando la <b>reserva del kit</b> para poder recibirlo cuanto antes.</li>
+      <li>Redacción de la memoria, centrada en el <b>cierre de los capítulos 1, 2, 3, y 6</b>.</li>
+    </ul>
+  </div>
+
+  <!-- ============ 9 AGOSTO ============ -->
+  <div class="phase">
+    <div class="phase-head">
+      <span class="phase-date">9 agosto</span>
+    </div>
+    <ul class="tasks">
+      <li>He hecho un par de vuelos en el <b>club de aeromodelismo</b> (por la mañana) para empezar a construir mi <b>dataset de detección de personas</b>: grabación de vídeos con el dron sobre mis padres.</li>
+      <li>Procesado del material: <b>extracción de frames</b> de los vídeos y selección de <b>35 imágenes distintas</b> para el dataset.</li>
+    </ul>
+  </div>
+
+ <footer>
     Documento de seguimiento del TFG · Se actualiza periódicamente.<br>
     Sistema Drone-SAR · Categoría «específica» (Reglamentos UE 2019/947 y 2019/945) · AESA.
-  </footer>
-
-</div>
+ </footer>
 </body>
 </html>

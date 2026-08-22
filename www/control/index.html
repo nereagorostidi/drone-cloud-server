@@ -19,12 +19,36 @@
   <title>Drone-SAR · Control</title>
   <!-- El texto que aparece en la pestaña del navegador. -->
 
+  <!-- ===== PWA: manifest + iconos + color de tema =====
+       El manifest.json describe la "app" (nombre, iconos, modo standalone).
+       Es lo que hace aparecer el botón/opción "Instalar" en el navegador. -->
+  <link rel="manifest" href="manifest.json">
+
+  <!-- Icono que usan Android/Chrome al instalar (y como favicon en pestaña). -->
+  <link rel="icon" href="icons/favicon.png" type="image/png">
+
+  <!-- iOS no lee el manifest.json para el icono de pantalla de inicio:
+       necesita este link aparte, con imagen SIN transparencia. -->
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+
+  <!-- Color de la barra de estado/navegador cuando la app está instalada
+       (mismo tono que el fondo de la página, para que no "salte"). -->
+  <meta name="theme-color" content="#0D0C0A">
+
+  <!-- Le dice a iOS que esta página se puede abrir como app a pantalla
+       completa (sin la barra de Safari) al añadirla al inicio. -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Drone-SAR">
+
   <!-- Precarga de las fuentes de Google (mejora un poco la velocidad de descarga). -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
-  <!-- Descarga las tres tipografías que usa la página (Space Grotesk, Inter, JetBrains Mono). -->
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <!-- Descarga las dos tipografías que usa la página: una condensada de
+       rótulo industrial (títulos y botones) y una monoespaciada técnica
+       (etiquetas, datos, registro). -->
+  <link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Condensed:wght@600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 
   <!-- AQUÍ está la clave de la separación: en vez de un bloque <style> con todo
        el CSS dentro, enlazamos un fichero externo 'estilos.css'.
@@ -45,6 +69,20 @@
     <div class="eyebrow">TFG · Drone-SAR</div>   <!-- pequeño texto superior en naranja -->
     <h1>Control <span class="sar">·</span> dron</h1>  <!-- título; el <span> colorea el punto -->
     <div class="sub">Panel de teleoperación (simulación)</div>  <!-- subtítulo -->
+    <div class="hazard" aria-hidden="true"></div>  <!-- franja decorativa tipo cinta de baliza -->
+
+    <!-- ============ GRUPO: DRON ============ -->
+    <!-- Desplegable para elegir a qué dron van dirigidos los comandos.
+         Su valor se lee en cada envío y se manda como "drone_id". -->
+    <div class="grupo">
+      <h2>Dron</h2>
+      <div class="fila">
+        <select id="droneId" aria-label="Dron seleccionado">
+          <option value="dron-01">dron-01</option>
+          <option value="dron-02">dron-02</option>
+        </select>
+      </div>
+    </div>
 
     <!-- ============ GRUPO: MOTORES ============ -->
     <!-- Cada "grupo" es una sección de botones con su título. -->
@@ -88,6 +126,58 @@
       </div>
     </div>
 
+    <!-- ============ GRUPO: CÁMARA ============ -->
+    <!-- Vídeo en directo (streaming del nodo edge) + empezar/parar grabación.
+         El vídeo va aquí porque son la misma "fuente": lo que ves en el
+         iframe es la misma cámara que arman/paran estos botones. Los
+         botones, de momento, solo ENVÍAN el comando a la API; falta decidir
+         cómo lo atiende el nodo edge (siguiente paso, junto contigo). -->
+    <div class="grupo">
+      <h2>Cámara</h2>
+      <div class="video-wrap">
+        <iframe src="https://stream.gorostiditfg.com/dron_live/"
+                title="Transmisión en directo del dron"
+                allow="autoplay; fullscreen"
+                allowfullscreen>
+        </iframe>
+      </div>
+      <div class="fila" style="margin-top:14px">
+        <button class="b-ok" onclick="enviar('start_recording')">Empezar grabación</button>
+        <button class="b-danger" onclick="enviar('stop_recording')">Parar grabación</button>
+      </div>
+    </div>
+
+    <!-- ============ GRUPO: SISTEMA (Raspberry Pi) ============ -->
+    <!-- Comandos que no controlan el vuelo, sino la propia Raspberry Pi y
+         los parámetros de sus servicios (sensor, vídeo). De momento estos
+         comandos solo se ENVÍAN a la API; falta que la Pi (otro repo) los
+         atienda de verdad. -->
+    <div class="grupo">
+      <h2>Sistema (Raspberry Pi)</h2>
+
+      <div class="fila">
+        <!-- Apaga la Raspberry Pi. Es una acción irreversible desde la web
+             (habría que ir físicamente a reiniciarla), así que usamos el
+             estilo "b-danger" como en Desarmar. -->
+        <button class="b-danger" onclick="apagarPi()">Apagar Raspberry Pi</button>
+      </div>
+
+      <!-- Intervalo de envío del sensor: cada cuántos segundos el "modo
+           sensor" manda datos. Parametrizable: se escribe un número y se
+           envía como dato extra junto al comando. -->
+      <div class="takeoff">
+        <input id="sensorInterval" type="number" value="60" min="1" step="1" aria-label="Intervalo de envío del sensor en segundos">
+        <button class="b-neutral" style="flex:1" onclick="setSensorInterval()">Intervalo sensor (s)</button>
+      </div>
+
+      <!-- Throttling de vídeo: cada cuánto tiempo (o a qué límite) se envían
+           los fotogramas/streaming de vídeo. También parametrizable. -->
+      <div class="takeoff">
+        <input id="videoThrottle" type="number" value="500" min="0" step="10" aria-label="Throttling de vídeo en milisegundos">
+        <button class="b-neutral" style="flex:1" onclick="setVideoThrottle()">Throttling vídeo (ms)</button>
+      </div>
+    </div>
+
     <!-- Registro de comandos: aquí el JavaScript irá escribiendo lo que se envía
          y las respuestas. Empieza con un texto gris de aviso. -->
     <div class="log" id="log"><span class="t">Registro de comandos…</span></div>
@@ -103,7 +193,7 @@
     // Es la URL base a la que se enviarán los comandos.
     // - En LOCAL o con el puerto abierto: la IP del EC2 + puerto 5000.
     // - Si algún día sirves por HTTPS con reverse proxy: cambia esto a "/api".
-    const API_BASE = "http://51.48.220.143:5000/api";
+    const API_BASE = "https://api.gorostiditfg.com/api";
 
     // Guardamos una referencia al recuadro del registro para escribir en él.
     const log = document.getElementById('log');
@@ -120,9 +210,11 @@
     // Función principal: envía un comando a la API.
     // 'command' es la acción (arm, disarm...); 'extra' son datos opcionales (p. ej. altitud).
     async function enviar(command, extra){
-      // Junta el comando con los datos extra en un solo objeto.
-      const cuerpo = Object.assign({command}, extra || {});
-      anota(`→ ${command}`, 'l-cmd');   // deja constancia en el registro
+      // Lee el dron elegido en el desplegable y lo añade al cuerpo,
+      // junto con el comando y los datos extra.
+      const droneId = document.getElementById('droneId').value;
+      const cuerpo = Object.assign({command, drone_id: droneId}, extra || {});
+      anota(`→ [${droneId}] ${command}`, 'l-cmd');   // deja constancia en el registro
 
       try {
         // fetch = hace la petición HTTP a la API (POST al endpoint /command).
@@ -148,6 +240,43 @@
       const alt = parseFloat(document.getElementById('alt').value);  // lee el número
       if (isNaN(alt)){ anota('✗ altitud no válida', 'l-err'); return; }  // valida
       enviar('takeoff', {altitude: alt});   // envía takeoff con la altitud como dato extra
+    }
+
+    // Botón "Apagar Raspberry Pi": pide confirmación (es irreversible desde
+    // la web) y envía el comando 'shutdown'. La Pi aún no lo atiende: eso
+    // se conecta en el repo de la Pi más adelante.
+    function apagarPi(){
+      if (!confirm('¿Seguro que quieres apagar la Raspberry Pi?')) return;
+      enviar('shutdown');
+    }
+
+    // Botón "Intervalo sensor (s)": lee el intervalo en segundos y lo envía
+    // como dato extra junto al comando 'set_sensor_interval'.
+    function setSensorInterval(){
+      const seg = parseFloat(document.getElementById('sensorInterval').value);
+      if (isNaN(seg) || seg <= 0){ anota('✗ intervalo no válido', 'l-err'); return; }
+      enviar('set_sensor_interval', {interval_seconds: seg});
+    }
+
+    // Botón "Throttling vídeo (ms)": lee el throttling en milisegundos y lo
+    // envía como dato extra junto al comando 'set_video_throttle'.
+    function setVideoThrottle(){
+      const ms = parseFloat(document.getElementById('videoThrottle').value);
+      if (isNaN(ms) || ms < 0){ anota('✗ throttling no válido', 'l-err'); return; }
+      enviar('set_video_throttle', {throttle_ms: ms});
+    }
+
+    // === Registro del Service Worker (PWA) ===
+    // Comprueba que el navegador soporte service workers (todos los
+    // modernos lo hacen) y, si es así, le pide que registre 'sw.js'.
+    // A partir de ahí el propio navegador se encarga de instalarlo,
+    // cachear el app shell y mantenerlo actualizado.
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js')
+          .then(() => anota('Service worker registrado (modo offline activo)', 'l-ok'))
+          .catch(() => anota('No se pudo registrar el service worker', 'l-err'));
+      });
     }
 
   </script>

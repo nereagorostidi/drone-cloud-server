@@ -3,6 +3,11 @@
    Este fichero contiene TODO el CSS (los estilos) que antes estaban
    dentro del <style> en el HTML. El HTML lo carga con:
        <link rel="stylesheet" href="estilos.css">
+
+   Dirección visual: panel de equipo de rescate — chasis oscuro y cálido
+   (no el azul-noche típico de dashboard), acabado tipo placa/instrumento
+   con esquinas de mira de cámara, y acento ámbar de "equipo de rescate"
+   (el mismo naranja que llevan los chalecos, balizas y cajas negras).
    ===================================================================== */
 
 
@@ -13,22 +18,24 @@
    Así, si quieres cambiar un color, lo cambias UNA vez aquí.
    --------------------------------------------------------------------- */
 :root{
-  --bg:#0F1E2E;        /* fondo azul muy oscuro (color base de la página) */
-  --surface:#16293C;   /* fondo de tarjetas/botones neutros (un poco más claro) */
-  --ink:#F5F7FA;       /* color del texto principal (casi blanco) */
-  --slate:#8fa3b5;     /* texto secundario (gris azulado) */
-  --line:#26405A;      /* color de bordes y líneas */
-  --signal:#FF6A13;    /* naranja de acento (rescate SAR) */
-  --signal-d:#c94f0d;  /* naranja más oscuro (variante) */
-  --danger:#E24B4A;    /* rojo (para desarmar / acciones peligrosas) */
-  --danger-d:#b03433;  /* rojo más oscuro (variante) */
-  --ok:#1F9D6B;        /* verde (acciones correctas) */
-  --sky:#2F9BC4;       /* azul cielo (acento secundario) */
+  --bg:#0D0C0A;         /* fondo casi negro, con un punto cálido (no azul) */
+  --surface:#18160F;    /* superficie de tarjetas/inputs — taupe oscuro */
+  --surface-2:#0A0908;  /* superficie hundida (terminal/registro) */
+  --ink:#F2EFE6;        /* texto principal — blanco roto cálido */
+  --muted:#96897A;      /* texto secundario — gris cálido */
+  --line:#332E1E;       /* bordes y líneas — bronce apagado */
+  --amber:#E5892A;      /* acento principal — ámbar de equipo de rescate */
+  --red:#D2483C;        /* peligro — rojo controlado (no neón) */
+  --green:#7BA05B;      /* éxito en el registro — verde apagado */
 
-  /* Fuentes: definimos tres familias con su nombre y alternativas de reserva. */
-  --display:"Space Grotesk",system-ui,sans-serif;   /* títulos */
-  --body:"Inter",system-ui,sans-serif;              /* texto normal */
-  --mono:"JetBrains Mono",ui-monospace,monospace;   /* datos, registro, etiquetas técnicas */
+  --radius:5px;         /* esquinas de tarjetas/botones: casi rectas, tipo placa */
+
+  /* Solo dos familias: una de instrumento técnico (datos/etiquetas) y una
+     condensada de rótulo industrial (título y controles). Esta página
+     apenas tiene texto de párrafo, así que no hace falta una tercera
+     fuente "de lectura". */
+  --display:"Big Shoulders Condensed",system-ui,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,monospace;
 }
 
 
@@ -44,23 +51,26 @@
   padding:0;
 }
 
+@media (prefers-reduced-motion: reduce){
+  *{ transition:none !important; animation:none !important; }
+}
+
 
 /* ---------------------------------------------------------------------
    CUERPO DE LA PÁGINA
    --------------------------------------------------------------------- */
 body{
-  background:var(--bg);              /* fondo oscuro */
-  color:var(--ink);                  /* texto claro */
-  font-family:var(--body);           /* fuente por defecto: Inter */
-  -webkit-font-smoothing:antialiased;/* texto más suave en pantallas Apple */
-  padding:28px 18px;                 /* aire alrededor: 28px arriba/abajo, 18px lados */
-  min-height:100vh;                  /* ocupa como mínimo toda la altura de la pantalla */
+  background:var(--bg);
+  color:var(--ink);
+  font-family:var(--mono);
+  -webkit-font-smoothing:antialiased;
+  padding:32px 18px 48px;
+  min-height:100vh;
 }
 
-/* Contenedor central que agrupa todo y limita el ancho. */
 .wrap{
-  max-width:560px;   /* no se estira más de 560px (cómodo de leer) */
-  margin:0 auto;     /* 'auto' a los lados = centrado horizontal */
+  max-width:560px;
+  margin:0 auto;
 }
 
 
@@ -68,48 +78,138 @@ body{
    ENCABEZADO (eyebrow, título, subtítulo)
    --------------------------------------------------------------------- */
 .eyebrow{
-  font-family:var(--mono);       /* fuente monoespaciada (técnica) */
+  font-family:var(--mono);
   font-size:11px;
-  letter-spacing:.16em;          /* letras algo separadas */
-  text-transform:uppercase;      /* todo en mayúsculas */
-  color:var(--signal);           /* naranja */
+  letter-spacing:.18em;
+  text-transform:uppercase;
+  color:var(--amber);
   font-weight:600;
 }
 h1{
-  font-family:var(--display);    /* Space Grotesk */
-  font-weight:700;               /* negrita fuerte */
-  font-size:2rem;
-  letter-spacing:-.02em;         /* letras un pelín más juntas (estético en títulos) */
-  margin:6px 0 4px;              /* márgenes arriba/abajo */
+  font-family:var(--display);
+  font-weight:800;
+  font-size:3rem;
+  line-height:.95;
+  text-transform:uppercase;
+  letter-spacing:.01em;
+  margin:8px 0 6px;
 }
-h1 .sar{ color:var(--signal); }  /* colorea de naranja el elemento con clase "sar" (el punto) */
+h1 .sar{ color:var(--amber); }
 .sub{
-  color:var(--slate);            /* gris azulado */
-  font-size:.95rem;
+  color:var(--muted);
+  font-size:.85rem;
   font-family:var(--mono);
+  letter-spacing:.02em;
+}
+
+/* Franja de "cinta de baliza" bajo el encabezado: rayas diagonales
+   ámbar/fondo, como la cinta de precaución de un equipo de rescate.
+   Es puramente un rasgo de estilo, el elemento distintivo de la página. */
+.hazard{
+  height:6px;
+  margin:22px 0 6px;
+  border-radius:2px;
+  background:repeating-linear-gradient(
+    -45deg,
+    var(--amber) 0 10px,
+    var(--surface) 10px 20px
+  );
+  opacity:.55;
 }
 
 
 /* ---------------------------------------------------------------------
-   GRUPOS DE BOTONES
+   GRUPOS DE BOTONES  (tarjetas tipo placa, con esquinas de mira)
    --------------------------------------------------------------------- */
-.grupo{ margin-top:28px; }        /* separación entre secciones */
+.grupo{
+  position:relative;
+  margin-top:20px;
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  padding:18px 18px 20px;
+}
+
+/* Esquinas de mira: dos marcas en forma de "L" (arriba-izq. y abajo-dcha.)
+   que asoman por fuera del borde de la tarjeta, como el visor de una
+   cámara enfocando el bloque de controles. Referencia directa al dron. */
+.grupo::before,
+.grupo::after{
+  content:"";
+  position:absolute;
+  width:14px;
+  height:14px;
+  pointer-events:none;
+}
+.grupo::before{
+  top:-6px;
+  left:-6px;
+  border-top:2px solid var(--amber);
+  border-left:2px solid var(--amber);
+}
+.grupo::after{
+  bottom:-6px;
+  right:-6px;
+  border-bottom:2px solid var(--amber);
+  border-right:2px solid var(--amber);
+}
 
 .grupo h2{
   font-family:var(--mono);
-  font-size:12px;
-  letter-spacing:.1em;
+  font-size:11.5px;
+  letter-spacing:.14em;
   text-transform:uppercase;
-  color:var(--slate);
-  margin-bottom:12px;
+  color:var(--muted);
+  margin-bottom:14px;
   font-weight:500;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.grupo h2::before{
+  content:"";
+  width:6px;
+  height:6px;
+  background:var(--amber);
+  flex:none;
 }
 
 /* "fila" coloca los botones en horizontal, uno al lado del otro. */
 .fila{
-  display:flex;      /* activa el modo flexible (elementos en línea) */
-  gap:12px;          /* separación entre botones */
-  flex-wrap:wrap;    /* si no caben, saltan a la línea siguiente */
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+}
+
+
+/* ---------------------------------------------------------------------
+   SELECTOR DE DRON
+   --------------------------------------------------------------------- */
+select{
+  font-family:var(--mono);
+  font-size:.95rem;
+  font-weight:600;
+  letter-spacing:.04em;
+  color:var(--ink);
+  background:var(--surface-2);
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  padding:14px 40px 14px 16px;
+  width:100%;
+  cursor:pointer;
+  appearance:none;
+  -webkit-appearance:none;
+  /* Flecha dibujada a mano en SVG (color ámbar) en vez del icono nativo
+     del navegador, para que combine con el resto del panel. */
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='9' viewBox='0 0 14 9'><path d='M1 1l6 6 6-6' fill='none' stroke='%23E5892A' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+  background-repeat:no-repeat;
+  background-position:right 16px center;
+  transition:border-color .15s;
+}
+select:hover{ border-color:var(--amber); }
+select:focus-visible{
+  outline:2px solid var(--amber);
+  outline-offset:2px;
 }
 
 
@@ -118,74 +218,118 @@ h1 .sar{ color:var(--signal); }  /* colorea de naranja el elemento con clase "sa
    --------------------------------------------------------------------- */
 button{
   font-family:var(--display);
-  font-weight:600;
-  font-size:1rem;
-  color:#fff;                /* texto blanco */
-  border:none;               /* sin borde */
-  border-radius:12px;        /* esquinas redondeadas */
-  padding:16px 20px;         /* tamaño interior (alto/ancho del botón) */
-  cursor:pointer;            /* el cursor se vuelve "mano" al pasar por encima */
-  flex:1;                    /* cada botón ocupa el mismo espacio en su fila */
-  min-width:120px;           /* pero nunca más estrecho de 120px */
-  transition:transform .1s, filter .15s;  /* animación suave al pulsar/pasar */
+  font-weight:700;
+  font-size:1.15rem;
+  letter-spacing:.02em;
+  text-transform:uppercase;
+  border:none;
+  border-radius:var(--radius);
+  padding:14px 18px;
+  cursor:pointer;
+  flex:1;
+  min-width:130px;
+  transition:filter .15s, transform .08s, box-shadow .15s;
 }
-button:hover{ filter:brightness(1.1); }   /* al pasar el ratón, se aclara un poco */
-button:active{ transform:scale(.97); }     /* al pulsar, se encoge un pelín (efecto "clic") */
+button:hover{ filter:brightness(1.08); }
+button:active{ transform:translateY(1px); filter:brightness(.92); }
+button:focus-visible{
+  outline:2px solid var(--ink);
+  outline-offset:2px;
+}
 
-/* Colores según el tipo de botón (las clases que pusimos en el HTML). */
-.b-ok{ background:var(--signal); }              /* naranja: armar, despegar */
-.b-danger{ background:var(--danger); }          /* rojo: desarmar */
-.b-neutral{                                     /* gris oscuro: navegación/regreso */
-  background:var(--surface);
+/* Ámbar/rojo con texto oscuro: acabado de placa de aviso (como las
+   etiquetas de peligro reales), no un botón de app con texto blanco. */
+.b-ok{ background:var(--amber); color:var(--bg); }
+.b-danger{ background:var(--red); color:var(--bg); }
+.b-neutral{
+  background:transparent;
+  color:var(--ink);
   border:1px solid var(--line);
 }
+.b-neutral:hover{ border-color:var(--amber); filter:none; }
 
 
 /* ---------------------------------------------------------------------
-   ZONA DE DESPEGUE (campo de altitud + botón)
+   ZONA DE DESPEGUE / PARÁMETROS (campo numérico + botón)
    --------------------------------------------------------------------- */
 .takeoff{
   display:flex;
-  gap:12px;
-  align-items:stretch;   /* el campo y el botón tienen la misma altura */
+  gap:10px;
+  align-items:stretch;
   flex-wrap:wrap;
 }
 .takeoff input{
   font-family:var(--mono);
   font-size:1rem;
-  background:var(--surface);
+  font-weight:600;
+  background:var(--surface-2);
   border:1px solid var(--line);
   color:var(--ink);
-  border-radius:12px;
+  border-radius:var(--radius);
   padding:0 16px;
-  width:120px;
-  text-align:center;     /* el número se centra dentro del campo */
+  width:110px;
+  text-align:center;
 }
-.takeoff input:focus{
-  outline:none;                    /* quita el borde azul feo por defecto */
-  border-color:var(--signal);      /* al escribir, el borde se pone naranja */
+.takeoff input:focus-visible{
+  outline:none;
+  border-color:var(--amber);
+}
+
+
+/* ---------------------------------------------------------------------
+   VÍDEO EN DIRECTO (streaming edge AI)
+   El iframe viene con width/height fijos (640x360) desde el proveedor
+   del stream, pero aquí lo forzamos a ser responsive: en vez de esos
+   píxeles fijos, .video-wrap reserva el hueco con aspect-ratio 16:9 y
+   el iframe se estira dentro con position:absolute + inset:0.
+   --------------------------------------------------------------------- */
+.video-wrap{
+  position:relative;
+  width:100%;
+  aspect-ratio:16/9;
+  background:var(--surface-2);
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  overflow:hidden;
+}
+.video-wrap iframe{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  border:0;
 }
 
 
 /* ---------------------------------------------------------------------
    REGISTRO DE COMANDOS (el recuadro de abajo)
+   Superficie "hundida", a diferencia de las tarjetas de control (que
+   están en relieve): así se lee como una lectura pasiva, no un mando.
    --------------------------------------------------------------------- */
 .log{
-  margin-top:28px;
-  background:#0a1520;            /* fondo casi negro, tipo terminal */
+  margin-top:24px;
+  background:var(--surface-2);
   border:1px solid var(--line);
-  border-radius:12px;
+  border-radius:var(--radius);
   padding:16px;
-  font-family:var(--mono);       /* fuente monoespaciada (aspecto de consola) */
+  font-family:var(--mono);
   font-size:12.5px;
   line-height:1.7;
-  min-height:120px;              /* altura mínima */
-  max-height:240px;              /* si crece mucho, no pasa de aquí... */
-  overflow-y:auto;               /* ...y aparece barra de desplazamiento */
-  color:var(--slate);
+  min-height:120px;
+  max-height:240px;
+  overflow-y:auto;
+  color:var(--muted);
 }
-/* Colores de las líneas del registro según su tipo (los pone el JavaScript). */
-.log .l-ok{ color:var(--ok); }       /* verde: enviado con éxito */
-.log .l-err{ color:var(--danger); }  /* rojo: error */
-.log .l-cmd{ color:var(--ink); }     /* claro: el comando que se envía */
-.log .t{ color:#5a6b7b; }            /* gris apagado: la hora */
+.log .l-ok{ color:var(--green); }
+.log .l-err{ color:var(--red); }
+.log .l-cmd{ color:var(--ink); }
+.log .t{ color:#514A38; }
+
+
+/* ---------------------------------------------------------------------
+   RESPONSIVE
+   --------------------------------------------------------------------- */
+@media (max-width:420px){
+  h1{ font-size:2.3rem; }
+  button{ font-size:1rem; padding:13px 16px; }
+}

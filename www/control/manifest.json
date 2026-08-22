@@ -1,0 +1,26 @@
+{
+  "name": "Drone-SAR · Control",
+  "short_name": "Drone-SAR",
+  "description": "Panel de teleoperación del sistema UAV de Búsqueda y Rescate (TFG).",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0D0C0A",
+  "theme_color": "#0D0C0A",
+  "lang": "es",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
