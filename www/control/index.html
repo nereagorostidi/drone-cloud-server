@@ -73,7 +73,7 @@
 
     <!-- ============ GRUPO: DRON ============ -->
     <!-- Desplegable para elegir a qué dron van dirigidos los comandos.
-         Su valor se lee en cada envío y se manda como "drone_id". -->
+         Su valor se lee en cada envío y se manda como "dron_id". -->
     <div class="grupo">
       <h2>Dron</h2>
       <div class="fila">
@@ -213,7 +213,7 @@
       // Lee el dron elegido en el desplegable y lo añade al cuerpo,
       // junto con el comando y los datos extra.
       const droneId = document.getElementById('droneId').value;
-      const cuerpo = Object.assign({command, drone_id: droneId}, extra || {});
+      const cuerpo = Object.assign({command, dron_id: droneId}, extra || {});
       anota(`→ [${droneId}] ${command}`, 'l-cmd');   // deja constancia en el registro
 
       try {

@@ -39,10 +39,10 @@ load_dotenv()
 
 MQTT_BROKER = os.getenv("MQTT_BROKER", "localhost")
 MQTT_PORT = int(os.getenv("MQTT_PORT", 1883))
-DRONE_ID = os.getenv("DRONE_ID", "dron-02")
+DRON_ID = os.getenv("DRON_ID", "dron-02")
 
 # Drones que existen de verdad (deben coincidir con el desplegable de la web).
-# No es autenticacion: es solo para que un drone_id mal escrito o con
+# No es autenticacion: es solo para que un dron_id mal escrito o con
 # caracteres de MQTT (/, +, #) no acabe formando un topic distinto al
 # esperado o publicando fuera del namespace "dronsar/...".
 DRONES_VALIDOS = {"dron-01", "dron-02"}
@@ -54,7 +54,7 @@ ALTITUD_MAXIMA = 120        # limite legal (Reglamento UE): 120 m sobre el terre
 
 # Comandos de configuracion de la Raspberry Pi (grupo "Sistema" del panel).
 # A diferencia de COMANDOS_VALIDOS (que van al topic de comandos de vuelo),
-# estos van cada uno a su propio dominio MQTT: dronsar/{drone_id}/{dominio}/config
+# estos van cada uno a su propio dominio MQTT: dronsar/{dron_id}/{dominio}/config
 COMANDOS_CONFIG = {
     "shutdown": "sistema",
     "set_sensor_interval": "sensor",
@@ -72,12 +72,12 @@ mqtt_client.connect(MQTT_BROKER, MQTT_PORT, 60)
 mqtt_client.loop_start()
 
 
-def _publicar(topic, command, params, drone_id):
+def _publicar(topic, command, params, dron_id):
     """Construye el JSON y lo publica en el topic indicado."""
     mensaje = {
         "command": command,
         "params": params,
-        "drone_id": drone_id,
+        "dron_id": dron_id,
         "command_id": uuid.uuid4().hex[:6],
         "timestamp": datetime.now().astimezone().isoformat(),
     }
@@ -86,17 +86,17 @@ def _publicar(topic, command, params, drone_id):
     return mensaje, info.is_published()
 
 
-def publicar_comando(command, params, drone_id):
+def publicar_comando(command, params, dron_id):
     """Publica un comando de vuelo en su topic de siempre."""
-    topic = f"dronsar/{drone_id}/comandos"
-    return _publicar(topic, command, params, drone_id)
+    topic = f"dronsar/{dron_id}/comandos"
+    return _publicar(topic, command, params, dron_id)
 
 
-def publicar_config(command, params, drone_id):
+def publicar_config(command, params, dron_id):
     """Publica un comando de configuracion de la Pi en el topic de su dominio."""
     dominio = COMANDOS_CONFIG[command]
-    topic = f"dronsar/{drone_id}/{dominio}/config"
-    return _publicar(topic, command, params, drone_id)
+    topic = f"dronsar/{dron_id}/{dominio}/config"
+    return _publicar(topic, command, params, dron_id)
 
 
 # =====================================================================
@@ -118,7 +118,7 @@ def add_cors(resp):
 @app.route("/api/health", methods=["GET"])
 def health():
     """Comprobacion rapida de que la API esta viva."""
-    return jsonify({"status": "ok", "drone_id": DRONE_ID})
+    return jsonify({"status": "ok", "dron_id": DRON_ID})
 
 
 @app.route("/api/command", methods=["POST", "OPTIONS"])
@@ -129,10 +129,10 @@ def command():
 
     datos = request.get_json(silent=True) or {}
     command = datos.get("command")
-    drone_id = datos.get("drone_id") or DRONE_ID
+    dron_id = datos.get("dron_id") or DRON_ID
 
-    if drone_id not in DRONES_VALIDOS:
-        return jsonify({"ok": False, "error": f"drone_id no valido: {drone_id}"}), 400
+    if dron_id not in DRONES_VALIDOS:
+        return jsonify({"ok": False, "error": f"dron_id no valido: {dron_id}"}), 400
 
     # Comandos de vuelo: van al topic de comandos de siempre.
     if command in COMANDOS_VALIDOS:
@@ -147,7 +147,7 @@ def command():
                                 "error": f"altitud maxima {ALTITUD_MAXIMA} m"}), 400
             params["altitude"] = altitude
 
-        mensaje, publicado = publicar_comando(command, params, drone_id)
+        mensaje, publicado = publicar_comando(command, params, dron_id)
         if publicado:
             return jsonify({"ok": True, "enviado": mensaje})
         return jsonify({"ok": False, "error": "No se pudo publicar"}), 500
@@ -168,7 +168,7 @@ def command():
                                 "error": "set_video_throttle requiere 'throttle_ms' >= 0"}), 400
             params["throttle_ms"] = throttle
 
-        mensaje, publicado = publicar_config(command, params, drone_id)
+        mensaje, publicado = publicar_config(command, params, dron_id)
         if publicado:
             return jsonify({"ok": True, "enviado": mensaje})
         return jsonify({"ok": False, "error": "No se pudo publicar"}), 500
