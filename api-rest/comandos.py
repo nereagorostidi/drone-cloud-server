@@ -41,7 +41,9 @@ DRON_ID_DEFAULT = os.getenv("DRON_ID", "dron-01")
 # =====================================================================
 parser = argparse.ArgumentParser(
     description="Publica un comando de vuelo por MQTT")
-parser.add_argument("accion", choices=["arm", "disarm", "takeoff","land","rtl", "hold"],
+parser.add_argument("accion",
+                    choices=["arm", "disarm", "takeoff", "land", "rtl", "hold",
+                             "start_mission"],
                     help="Accion a ejecutar en el dron")
 parser.add_argument("--altitude", type=float, default=None,
                     help="Altitud de despegue en metros (solo para takeoff)")

@@ -113,7 +113,9 @@
       <h2>Navegación</h2>
       <div class="fila">
         <button class="b-neutral" onclick="enviar('start_mission')">Iniciar misión</button>
-        <button class="b-neutral" onclick="enviar('hold')">Mantener</button>
+        <!-- 'Mantener' llama a mantener(): ordena al dron quedarse quieto
+             en el aire (loiter) en su posición actual. -->
+        <button class="b-neutral" onclick="mantener()">Mantener</button>
       </div>
     </div>
 
@@ -121,8 +123,10 @@
     <div class="grupo">
       <h2>Regreso</h2>
       <div class="fila">
-        <button class="b-neutral" onclick="enviar('land')">Aterrizar</button>
-        <button class="b-neutral" onclick="enviar('rtl')">Volver a casa (RTL)</button>
+        <!-- Estos dos inician una maniobra de vuelo real, así que sus
+             funciones piden confirmación antes de enviar (igual que apagarPi()). -->
+        <button class="b-neutral" onclick="aterrizar()">Aterrizar</button>
+        <button class="b-neutral" onclick="volverACasa()">Volver a casa (RTL)</button>
       </div>
     </div>
 
@@ -235,11 +239,39 @@
       }
     }
 
-    // Función del botón "Despegar": lee la altitud del campo y la envía.
+    // Función del botón "Despegar": lee la altitud del campo, la valida
+    // contra el rango permitido (min/max del propio <input>) y la envía.
     function despegar(){
-      const alt = parseFloat(document.getElementById('alt').value);  // lee el número
-      if (isNaN(alt)){ anota('✗ altitud no válida', 'l-err'); return; }  // valida
+      const campo = document.getElementById('alt');
+      const alt = parseFloat(campo.value);                 // lee el número
+      const min = parseFloat(campo.min) || 1;              // 1 m por defecto
+      const max = parseFloat(campo.max) || 120;            // 120 m (límite legal UE)
+      if (isNaN(alt)){ anota('✗ altitud no válida', 'l-err'); return; }
+      if (alt < min || alt > max){
+        anota(`✗ altitud fuera de rango (${min}–${max} m)`, 'l-err'); return;
+      }
+      if (!confirm(`¿Despegar y subir a ${alt} m?`)) return;
       enviar('takeoff', {altitude: alt});   // envía takeoff con la altitud como dato extra
+    }
+
+    // Botón "Mantener": el dron se queda quieto en el aire (loiter) en su
+    // posición actual. No lleva datos extra, igual que arm/disarm.
+    function mantener(){
+      enviar('hold');
+    }
+
+    // Botón "Aterrizar": el dron desciende y aterriza donde está.
+    // Pide confirmación porque inicia una maniobra de vuelo real.
+    function aterrizar(){
+      if (!confirm('¿Iniciar aterrizaje en la posición actual?')) return;
+      enviar('land');
+    }
+
+    // Botón "Volver a casa (RTL)": el dron regresa al punto de despegue y
+    // aterriza allí. También pide confirmación antes de enviar.
+    function volverACasa(){
+      if (!confirm('¿Volver al punto de despegue y aterrizar (RTL)?')) return;
+      enviar('rtl');
     }
 
     // Botón "Apagar Raspberry Pi": pide confirmación (es irreversible desde

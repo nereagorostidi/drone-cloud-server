@@ -142,6 +142,16 @@ def command():
             if altitude is None:
                 return jsonify({"ok": False,
                                 "error": "takeoff requiere 'altitude'"}), 400
+            # La web manda un numero, pero por si llega como texto ("20")
+            # lo convertimos y validamos que sea un numero positivo.
+            try:
+                altitude = float(altitude)
+            except (TypeError, ValueError):
+                return jsonify({"ok": False,
+                                "error": "altitude debe ser un numero"}), 400
+            if altitude <= 0:
+                return jsonify({"ok": False,
+                                "error": "altitude debe ser > 0"}), 400
             if altitude > ALTITUD_MAXIMA:
                 return jsonify({"ok": False,
                                 "error": f"altitud maxima {ALTITUD_MAXIMA} m"}), 400
