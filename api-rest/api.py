@@ -52,6 +52,12 @@ COMANDOS_VALIDOS = {"arm", "disarm", "takeoff", "land", "rtl", "hold",
                     "start_mission"}
 ALTITUD_MAXIMA = 120        # limite legal (Reglamento UE): 120 m sobre el terreno
 
+# Misiones predefinidas que la Pi sabe ejecutar. Cada nombre corresponde a
+# un script a bordo (p. ej. "mision01" -> mision01.py). Es una lista blanca:
+# evita que llegue a la Pi un nombre arbitrario para ejecutar.
+MISIONES_VALIDAS = {"mision01"}
+MISION_POR_DEFECTO = "mision01"
+
 # Comandos de configuracion de la Raspberry Pi (grupo "Sistema" del panel).
 # A diferencia de COMANDOS_VALIDOS (que van al topic de comandos de vuelo),
 # estos van cada uno a su propio dominio MQTT: dronsar/{dron_id}/{dominio}/config
@@ -156,6 +162,15 @@ def command():
                 return jsonify({"ok": False,
                                 "error": f"altitud maxima {ALTITUD_MAXIMA} m"}), 400
             params["altitude"] = altitude
+
+        if command == "start_mission":
+            # Nombre de la mision a ejecutar en la Pi. Si la web no lo manda,
+            # se usa la mision por defecto.
+            mision = datos.get("mission") or MISION_POR_DEFECTO
+            if mision not in MISIONES_VALIDAS:
+                return jsonify({"ok": False,
+                                "error": f"mision no valida: {mision}"}), 400
+            params["mission"] = mision
 
         mensaje, publicado = publicar_comando(command, params, dron_id)
         if publicado:

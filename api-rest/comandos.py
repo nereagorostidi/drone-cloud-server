@@ -47,6 +47,8 @@ parser.add_argument("accion",
                     help="Accion a ejecutar en el dron")
 parser.add_argument("--altitude", type=float, default=None,
                     help="Altitud de despegue en metros (solo para takeoff)")
+parser.add_argument("--mission", default=None,
+                    help="Nombre de la mision (solo para start_mission)")
 parser.add_argument("--dron-id", default=DRON_ID_DEFAULT,
                     help=f"Dron destino (por defecto: {DRON_ID_DEFAULT})")
 args = parser.parse_args()
@@ -60,11 +62,14 @@ if args.accion == "takeoff" and args.altitude is None:
 #  CONSTRUCCION DEL MENSAJE JSON
 # =====================================================================
 # 'params' lleva los datos propios de cada accion:
-#   arm / disarm -> vacio (no necesitan nada)
-#   takeoff      -> {"altitude": <metros>}
+#   arm / disarm  -> vacio (no necesitan nada)
+#   takeoff       -> {"altitude": <metros>}
+#   start_mission -> {"mission": <nombre>}
 params = {}
 if args.accion == "takeoff":
     params["altitude"] = args.altitude
+if args.accion == "start_mission":
+    params["mission"] = args.mission or "mision01"
 
 mensaje = {
     "command": args.accion,

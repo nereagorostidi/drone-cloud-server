@@ -111,8 +111,20 @@
     <!-- ============ GRUPO: NAVEGACIÓN ============ -->
     <div class="grupo">
       <h2>Navegación</h2>
-      <div class="fila">
-        <button class="b-neutral" onclick="enviar('start_mission')">Iniciar misión</button>
+
+      <!-- Misión predefinida: se elige cuál y el botón la lanza. El script
+           de la misión (waypoints, MAVLink) vive en la Pi; desde aquí solo
+           viaja su NOMBRE, que la Pi usa para saber qué script ejecutar.
+           Para añadir más misiones, basta con otra <option> aquí y su nombre
+           en MISIONES_VALIDAS (api.py). -->
+      <div class="takeoff">
+        <select id="misionId" aria-label="Misión a ejecutar">
+          <option value="mision01">mision01</option>
+        </select>
+        <button class="b-neutral" style="flex:1" onclick="iniciarMision()">Iniciar misión</button>
+      </div>
+
+      <div class="fila" style="margin-top:14px">
         <!-- 'Mantener' llama a mantener(): ordena al dron quedarse quieto
              en el aire (loiter) en su posición actual. -->
         <button class="b-neutral" onclick="mantener()">Mantener</button>
@@ -272,6 +284,15 @@
     function volverACasa(){
       if (!confirm('¿Volver al punto de despegue y aterrizar (RTL)?')) return;
       enviar('rtl');
+    }
+
+    // Botón "Iniciar misión": lee la misión elegida en el desplegable y la
+    // envía como dato extra. El dron pasará a modo autónomo y ejecutará esa
+    // misión, así que pide confirmación antes (como aterrizar / RTL).
+    function iniciarMision(){
+      const mision = document.getElementById('misionId').value;
+      if (!confirm(`¿Iniciar la misión "${mision}" en modo autónomo?`)) return;
+      enviar('start_mission', {mission: mision});
     }
 
     // Botón "Apagar Raspberry Pi": pide confirmación (es irreversible desde
