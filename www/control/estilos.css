@@ -274,6 +274,9 @@ button:focus-visible{
   outline:none;
   border-color:var(--amber);
 }
+/* En la fila de parámetros, el desplegable ocupa solo lo que necesita
+   (no el 100% como el selector de dron) para que quepa junto al botón. */
+.takeoff select{ width:auto; flex:0 0 auto; }
 
 
 /* ---------------------------------------------------------------------
