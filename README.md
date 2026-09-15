@@ -13,7 +13,7 @@ Incluye además las páginas web del proyecto, el panel de control y la API REST
 - `mqtt-to-influx.service` — Servicio systemd del puente MQTT.
 
 ## Flujo de comandos
-El panel de control envía órdenes al dron (armar, desarmar, despegar…) a través de esta cadena:`api.py` y `comandos.py` son dos emisores en paralelo (web y terminal) que hacen lo mismo: publicar el comando en MQTT. `receptor.py`, suscrito al topic, lo traduce a MAVLink y lo envía al autopiloto. Mission Planner, conectado también al autopiloto, refleja lo que ocurre.
+El panel de control envía órdenes al dron (armar, desarmar, despegar, iniciar misión…) a través de esta cadena:`api.py` y `comandos.py` son dos emisores en paralelo (web y terminal) que hacen lo mismo: publicar el comando en MQTT. `receptor.py`, suscrito al topic, lo traduce a MAVLink y lo envía al autopiloto. Mission Planner, conectado también al autopiloto, refleja lo que ocurre.
 
 ## Panel de control (PWA)
 `control.gorostiditfg.com` (`www/control/`) se puede instalar como app (Chrome/Android/iOS): icono propio y ventana sin barra del navegador. Piezas:
@@ -29,8 +29,12 @@ El grupo **Cámara** del panel incluye además la transmisión en directo de la 
 Todo lo que viaja por MQTT sigue el prefijo `dronsar/{dron_id}/...`:
 
 - **Telemetría** (la ingiere `mqtt_to_influx.py`): `dronsar/{dron_id}/{dominio}` o `dronsar/{dron_id}/{dominio}/{subdominio}` — ej. `dronsar/dron01/sistema`, `dronsar/dron01/video/resumen`. El `dron_id` se guarda como tag y el resto del path (`dominio` + `subdominio` unidos por `_`) es la measurement en InfluxDB. Añadir un dominio nuevo no requiere tocar el puente: basta con que el nodo edge publique ahí.
-- **Comandos hacia la Pi**: `dronsar/{dron_id}/{dominio}/config` — el sufijo `config` es especial y `mqtt_to_influx.py` lo excluye siempre (no es telemetría, es una orden).
+- **Comandos de vuelo** (los traduce `receptor.py` a MAVLink): `dronsar/{dron_id}/comandos`. Payload `{command, params, dron_id, command_id, timestamp}`. Comandos válidos: `arm`, `disarm`, `takeoff` (`params.altitude`, máx. 120 m), `land`, `rtl`, `hold`, `start_mission` (`params.mission`). Lista blanca en `COMANDOS_VALIDOS` (`api.py`).
+- **Comandos de configuración de la Pi**: `dronsar/{dron_id}/{dominio}/config` — el sufijo `config` es especial y `mqtt_to_influx.py` lo excluye siempre (no es telemetría, es una orden).
 - Cada mensaje de telemetría, si incluye una clave `timestamp` (ISO 8601), se usa como hora del punto en InfluxDB; si no la trae, se usa la hora de llegada del mensaje.
+
+### Misiones predefinidas
+El comando `start_mission` lleva en `params.mission` el nombre de una misión (`mision01`). La API valida ese nombre contra una lista blanca (`MISIONES_VALIDAS` en `api.py`) antes de publicarlo; el script de la misión vive en la Pi (`mision01` → `mision01.py`), no en este repo. Para añadir una misión: nueva `<option>` en el desplegable del panel + su nombre en `MISIONES_VALIDAS`.
 
 ## Requisitos
 - Python 3.10+

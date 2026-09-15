@@ -93,6 +93,9 @@
              'enviar' (definida abajo) con el comando 'arm'. -->
         <button class="b-ok" onclick="enviar('arm')">Armar</button>
         <button class="b-danger" onclick="enviar('disarm')">Desarmar</button>
+        <!-- Armado forzado: salta las comprobaciones previas al armado.
+             De momento solo el botón; su función se implementará después. -->
+        <button class="b-danger" onclick="armadoForzado()">Armado forzado</button>
       </div>
     </div>
 
@@ -264,6 +267,12 @@
       }
       if (!confirm(`¿Despegar y subir a ${alt} m?`)) return;
       enviar('takeoff', {altitude: alt});   // envía takeoff con la altitud como dato extra
+    }
+
+    // Botón "Armado forzado": pendiente de implementar (de momento solo
+    // deja constancia en el registro).
+    function armadoForzado(){
+      anota('función "Armado forzado" pendiente de implementar', 'l-err');
     }
 
     // Botón "Mantener": el dron se queda quieto en el aire (loiter) en su
