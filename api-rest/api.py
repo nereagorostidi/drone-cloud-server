@@ -48,8 +48,10 @@ DRON_ID = os.getenv("DRON_ID", "dron-02")
 DRONES_VALIDOS = {"dron-01", "dron-02"}
 
 # Comandos permitidos (deben coincidir con los del receptor.py)
-COMANDOS_VALIDOS = {"arm", "disarm", "takeoff", "land", "rtl", "hold",
-                    "start_mission"}
+# "force_arm" es un armado que salta los pre-arm checks (GPS, calibracion,
+# fallos de sensor...); solo debe usarse cuando se sabe lo que se hace.
+COMANDOS_VALIDOS = {"arm", "disarm", "force_arm", "takeoff", "land", "rtl",
+                    "hold", "start_mission"}
 ALTITUD_MAXIMA = 120        # limite legal (Reglamento UE): 120 m sobre el terreno
 
 # Misiones predefinidas que la Pi sabe ejecutar. Cada nombre corresponde a

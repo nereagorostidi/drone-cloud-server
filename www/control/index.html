@@ -93,8 +93,9 @@
              'enviar' (definida abajo) con el comando 'arm'. -->
         <button class="b-ok" onclick="enviar('arm')">Armar</button>
         <button class="b-danger" onclick="enviar('disarm')">Desarmar</button>
-        <!-- Armado forzado: salta las comprobaciones previas al armado.
-             De momento solo el botón; su función se implementará después. -->
+        <!-- Armado forzado: salta las comprobaciones previas al armado
+             (pre-arm checks). Pide confirmación, como apagarPi(), porque
+             es una acción peligrosa. -->
         <button class="b-danger" onclick="armadoForzado()">Armado forzado</button>
       </div>
     </div>
@@ -269,10 +270,12 @@
       enviar('takeoff', {altitude: alt});   // envía takeoff con la altitud como dato extra
     }
 
-    // Botón "Armado forzado": pendiente de implementar (de momento solo
-    // deja constancia en el registro).
+    // Botón "Armado forzado": arma saltando los pre-arm checks (GPS,
+    // calibración, fallos de sensor...). Es peligroso, así que pide
+    // confirmación explícita antes de enviarlo.
     function armadoForzado(){
-      anota('función "Armado forzado" pendiente de implementar', 'l-err');
+      if (!confirm('¿Forzar el armado saltando los pre-arm checks? Esto puede ser peligroso.')) return;
+      enviar('force_arm');
     }
 
     // Botón "Mantener": el dron se queda quieto en el aire (loiter) en su

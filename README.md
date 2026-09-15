@@ -29,7 +29,7 @@ El grupo **Cámara** del panel incluye además la transmisión en directo de la 
 Todo lo que viaja por MQTT sigue el prefijo `dronsar/{dron_id}/...`:
 
 - **Telemetría** (la ingiere `mqtt_to_influx.py`): `dronsar/{dron_id}/{dominio}` o `dronsar/{dron_id}/{dominio}/{subdominio}` — ej. `dronsar/dron01/sistema`, `dronsar/dron01/video/resumen`. El `dron_id` se guarda como tag y el resto del path (`dominio` + `subdominio` unidos por `_`) es la measurement en InfluxDB. Añadir un dominio nuevo no requiere tocar el puente: basta con que el nodo edge publique ahí.
-- **Comandos de vuelo** (los traduce `receptor.py` a MAVLink): `dronsar/{dron_id}/comandos`. Payload `{command, params, dron_id, command_id, timestamp}`. Comandos válidos: `arm`, `disarm`, `takeoff` (`params.altitude`, máx. 120 m), `land`, `rtl`, `hold`, `start_mission` (`params.mission`). Lista blanca en `COMANDOS_VALIDOS` (`api.py`).
+- **Comandos de vuelo** (los traduce `receptor.py` a MAVLink): `dronsar/{dron_id}/comandos`. Payload `{command, params, dron_id, command_id, timestamp}`. Comandos válidos: `arm`, `disarm`, `force_arm` (arma saltando los pre-arm checks de ArduPilot — GPS, calibración, fallos de sensor...; solo para cuando se sabe lo que se hace), `takeoff` (`params.altitude`, máx. 120 m), `land`, `rtl`, `hold`, `start_mission` (`params.mission`). Lista blanca en `COMANDOS_VALIDOS` (`api.py`).
 - **Comandos de configuración de la Pi**: `dronsar/{dron_id}/{dominio}/config` — el sufijo `config` es especial y `mqtt_to_influx.py` lo excluye siempre (no es telemetría, es una orden).
 - Cada mensaje de telemetría, si incluye una clave `timestamp` (ISO 8601), se usa como hora del punto en InfluxDB; si no la trae, se usa la hora de llegada del mensaje.
 
