@@ -175,6 +175,13 @@
     <div class="grupo">
       <h2>Sistema (Raspberry Pi)</h2>
 
+      <!-- Lanza sincroniza-media.sh en el EC2 (trae vídeos/fotos de la Pi y
+           convierte los vídeos a H.264). El resultado se consulta y se escribe
+           en el registro al terminar. -->
+      <div class="fila">
+        <button class="b-neutral" onclick="sincronizarMedia()">Sincronizar multimedia</button>
+      </div>
+
       <div class="fila">
         <!-- Apaga la Raspberry Pi. Es una acción irreversible desde la web
              (habría que ir físicamente a reiniciarla), así que usamos el
@@ -305,6 +312,67 @@
       const mision = document.getElementById('misionId').value;
       if (!confirm(`¿Iniciar la misión "${mision}" en modo autónomo?`)) return;
       enviar('start_mission', {mission: mision});
+    }
+
+    // Botón "Sincronizar multimedia": pide a la API que lance la sincronización
+    // del dron elegido en el desplegable y empieza a consultar su estado.
+    // Se envía el dron_id explícito; si no, la API usaría el dron por defecto.
+    let timerSync = null;
+
+    async function sincronizarMedia(){
+      const droneId = document.getElementById('droneId').value;
+      anota(`→ [${droneId}] sincronizar multimedia`, 'l-cmd');
+      try {
+        const r = await fetch(`${API_BASE}/sync`, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({dron_id: droneId})
+        });
+        const data = await r.json();
+        if (r.status === 202){
+          anota(`✓ sincronización de ${droneId} lanzada`, 'l-ok');
+          seguirEstadoSync(droneId);
+        } else if (r.status === 409){
+          anota(`✗ ya hay una sincronización en curso para ${droneId}`, 'l-err');
+          seguirEstadoSync(droneId);
+        } else {
+          anota(`✗ ${data.error || 'error'}`, 'l-err');
+        }
+      } catch(e){
+        anota(`✗ sin conexión con la API`, 'l-err');
+      }
+    }
+
+    // Consulta el estado de la sincronización cada 5 s hasta que deja de ser
+    // "en_curso". Si ya había un seguimiento activo, lo sustituye.
+    function seguirEstadoSync(droneId){
+      if (timerSync) clearInterval(timerSync);
+      const inicio = Date.now();
+      timerSync = setInterval(async () => {
+        if (Date.now() - inicio > 2 * 60 * 60 * 1000){   // mismo límite que la API
+          anota(`✗ la sincronización de ${droneId} sigue en curso tras 2 h; se deja de consultar`, 'l-err');
+          clearInterval(timerSync);
+          timerSync = null;
+          return;
+        }
+        try {
+          const r = await fetch(`${API_BASE}/sync/${droneId}`);
+          const data = await r.json();
+          const estado = data.estado;
+          if (!estado || estado.estado === 'en_curso') return;
+          clearInterval(timerSync);
+          timerSync = null;
+          if (estado.estado === 'ok'){
+            anota(`✓ sincronización de ${droneId} completada: ${estado.videos_copiados} vídeo(s), ${estado.fotos_copiadas} foto(s), ${estado.videos_convertidos} convertido(s)`, 'l-ok');
+          } else {
+            anota(`✗ sincronización de ${droneId} con errores: ${estado.mensaje}`, 'l-err');
+          }
+        } catch(e){
+          anota(`✗ no se pudo consultar el estado de la sincronización`, 'l-err');
+          clearInterval(timerSync);
+          timerSync = null;
+        }
+      }, 5000);
     }
 
     // Botón "Apagar Raspberry Pi": pide confirmación (es irreversible desde

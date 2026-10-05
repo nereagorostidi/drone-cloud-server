@@ -26,7 +26,9 @@ AVISO: sin autenticacion. Solo para simulacion / red de confianza.
 import os
 import json
 import uuid
-from datetime import datetime
+import subprocess
+import threading
+from datetime import datetime, timedelta
 from dotenv import load_dotenv
 import paho.mqtt.client as mqtt
 from flask import Flask, request, jsonify
@@ -204,12 +206,8 @@ def command():
                     "error": f"Comando no valido: {command}"}), 400
 
 # ---------------------------------------------------------------------
-#  SINCRONIZACIÓN MULTIMEDIA (añadir a api.py, antes de "ARRANQUE")
+#  SINCRONIZACIÓN MULTIMEDIA
 # ---------------------------------------------------------------------
-import subprocess
-import threading
-from datetime import timedelta
-
 SCRIPT_SYNC = "/usr/local/bin/sincroniza-media.sh"
 # Si un estado "en_curso" tiene más de esto, se considera colgado (el script
 # murió sin poder escribir el estado final) y se permite lanzar otra.
@@ -224,6 +222,14 @@ def _leer_estado_sync(dron_id):
             return json.load(f)
     except (FileNotFoundError, json.JSONDecodeError, OSError):
         return None
+
+
+def _escribir_estado_sync(dron_id, estado):
+    os.makedirs(DIR_ESTADO_SYNC, exist_ok=True)
+    ruta = f"{DIR_ESTADO_SYNC}/estado-{dron_id}.json"
+    with open(ruta + ".tmp", "w") as f:
+        json.dump({"dron_id": dron_id, **estado}, f)
+    os.replace(ruta + ".tmp", ruta)
 
 
 def _sync_colgada(estado):
@@ -251,19 +257,21 @@ def lanzar_sync():
 
     # Se marca ya como "en_curso" (antes de que el script arranque) para que
     # la PWA, al consultar justo después, no vea el resultado de la vez anterior.
-    os.makedirs(DIR_ESTADO_SYNC, exist_ok=True)
-    ruta = f"{DIR_ESTADO_SYNC}/estado-{dron_id}.json"
-    with open(ruta + ".tmp", "w") as f:
-        json.dump({"dron_id": dron_id, "estado": "en_curso",
-                   "inicio": datetime.now().astimezone().isoformat(timespec="seconds"),
-                   "mensaje": "Lanzada desde el panel"}, f)
-    os.replace(ruta + ".tmp", ruta)
+    ahora = datetime.now().astimezone().isoformat(timespec="seconds")
+    _escribir_estado_sync(dron_id, {"estado": "en_curso", "inicio": ahora,
+                                    "mensaje": "Lanzada desde el panel"})
 
     # Se lanza el script y NO se espera a que termine (puede tardar minutos).
     # Un hilo hace el wait() para que el proceso no quede como "zombi".
-    proc = subprocess.Popen([SCRIPT_SYNC, dron_id],
-                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                            start_new_session=True)
+    try:
+        proc = subprocess.Popen([SCRIPT_SYNC, dron_id],
+                                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                                start_new_session=True)
+    except OSError as e:
+        _escribir_estado_sync(dron_id, {"estado": "error", "inicio": ahora,
+                                        "fin": datetime.now().astimezone().isoformat(timespec="seconds"),
+                                        "mensaje": f"No se pudo lanzar el script: {e}"})
+        return jsonify({"ok": False, "error": "No se pudo lanzar la sincronización"}), 500
     threading.Thread(target=proc.wait, daemon=True).start()
     return jsonify({"ok": True, "mensaje": "Sincronización lanzada"}), 202
 
