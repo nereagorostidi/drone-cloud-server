@@ -203,6 +203,13 @@
         <input id="videoThrottle" type="number" value="500" min="0" step="10" aria-label="Throttling de vídeo en milisegundos">
         <button class="b-neutral" style="flex:1" onclick="setVideoThrottle()">Throttling vídeo (ms)</button>
       </div>
+
+      <!-- Confianza mínima con la que deteccion.py da una detección como válida
+           (0 a 1). Se envía como dato extra junto al comando 'set_confidence'. -->
+      <div class="takeoff">
+        <input id="confianza" type="number" value="0.5" min="0" max="1" step="0.05" aria-label="Confianza mínima de detección (0 a 1)">
+        <button class="b-neutral" style="flex:1" onclick="setConfianza()">Confianza detección</button>
+      </div>
     </div>
 
     <!-- Registro de comandos: aquí el JavaScript irá escribiendo lo que se envía
@@ -397,6 +404,14 @@
       const ms = parseFloat(document.getElementById('videoThrottle').value);
       if (isNaN(ms) || ms < 0){ anota('✗ throttling no válido', 'l-err'); return; }
       enviar('set_video_throttle', {throttle_ms: ms});
+    }
+
+    // Botón "Confianza detección": lee el umbral (0 a 1) y lo envía a la Pi
+    // como dato extra junto al comando 'set_confidence'.
+    function setConfianza(){
+      const c = parseFloat(document.getElementById('confianza').value);
+      if (isNaN(c) || c < 0 || c > 1){ anota('✗ confianza fuera de rango (0–1)', 'l-err'); return; }
+      enviar('set_confidence', {confidence: c});
     }
 
     // === Registro del Service Worker (PWA) ===

@@ -69,6 +69,7 @@ COMANDOS_CONFIG = {
     "shutdown": "sistema",
     "set_sensor_interval": "sensor",
     "set_video_throttle": "deteccion",
+    "set_confidence": "deteccion",
     "start_recording": "deteccion",
     "stop_recording": "deteccion",
 }
@@ -196,6 +197,12 @@ def command():
                 return jsonify({"ok": False,
                                 "error": "set_video_throttle requiere 'throttle_ms' >= 0"}), 400
             params["throttle_ms"] = throttle
+        elif command == "set_confidence":
+            confianza = datos.get("confidence")
+            if not isinstance(confianza, (int, float)) or not 0 <= confianza <= 1:
+                return jsonify({"ok": False,
+                                "error": "set_confidence requiere 'confidence' entre 0 y 1"}), 400
+            params["confidence"] = confianza
 
         mensaje, publicado = publicar_config(command, params, dron_id)
         if publicado:

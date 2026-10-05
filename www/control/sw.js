@@ -11,7 +11,7 @@
 
 // Cambia este nombre/versión cada vez que edites index.html o estilos.css
 // para que los navegadores ya instalados descarguen la versión nueva.
-const CACHE_NAME = 'dronesar-control-v3';
+const CACHE_NAME = 'dronesar-control-v4';
 
 // "App shell": lo mínimo para que la interfaz se pinte sin red.
 const APP_SHELL = [
