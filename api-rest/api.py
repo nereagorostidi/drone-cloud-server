@@ -203,6 +203,80 @@ def command():
     return jsonify({"ok": False,
                     "error": f"Comando no valido: {command}"}), 400
 
+# ---------------------------------------------------------------------
+#  SINCRONIZACIÓN MULTIMEDIA (añadir a api.py, antes de "ARRANQUE")
+# ---------------------------------------------------------------------
+import subprocess
+import threading
+from datetime import timedelta
+
+SCRIPT_SYNC = "/usr/local/bin/sincroniza-media.sh"
+# Si un estado "en_curso" tiene más de esto, se considera colgado (el script
+# murió sin poder escribir el estado final) y se permite lanzar otra.
+MAX_DURACION_SYNC = timedelta(hours=2)
+DIR_ESTADO_SYNC = "/var/lib/sar-sync"
+
+
+def _leer_estado_sync(dron_id):
+    """Devuelve el último estado de sincronización del dron (o None)."""
+    try:
+        with open(f"{DIR_ESTADO_SYNC}/estado-{dron_id}.json") as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError, OSError):
+        return None
+
+
+def _sync_colgada(estado):
+    try:
+        inicio = datetime.fromisoformat(estado["inicio"])
+        return datetime.now().astimezone() - inicio > MAX_DURACION_SYNC
+    except (KeyError, ValueError, TypeError):
+        return True
+
+
+@app.route("/api/sync", methods=["POST", "OPTIONS"])
+def lanzar_sync():
+    """Lanza sincroniza-media.sh en segundo plano y responde al momento."""
+    if request.method == "OPTIONS":
+        return ("", 204)
+    datos = request.get_json(silent=True) or {}
+    dron_id = datos.get("dron_id") or DRON_ID
+    if dron_id not in DRONES_VALIDOS:
+        return jsonify({"ok": False, "error": f"dron_id no valido: {dron_id}"}), 400
+
+    estado = _leer_estado_sync(dron_id)
+    if estado and estado.get("estado") == "en_curso" and not _sync_colgada(estado):
+        return jsonify({"ok": False, "error": "Ya hay una sincronización en curso",
+                        "estado": estado}), 409
+
+    # Se marca ya como "en_curso" (antes de que el script arranque) para que
+    # la PWA, al consultar justo después, no vea el resultado de la vez anterior.
+    os.makedirs(DIR_ESTADO_SYNC, exist_ok=True)
+    ruta = f"{DIR_ESTADO_SYNC}/estado-{dron_id}.json"
+    with open(ruta + ".tmp", "w") as f:
+        json.dump({"dron_id": dron_id, "estado": "en_curso",
+                   "inicio": datetime.now().astimezone().isoformat(timespec="seconds"),
+                   "mensaje": "Lanzada desde el panel"}, f)
+    os.replace(ruta + ".tmp", ruta)
+
+    # Se lanza el script y NO se espera a que termine (puede tardar minutos).
+    # Un hilo hace el wait() para que el proceso no quede como "zombi".
+    proc = subprocess.Popen([SCRIPT_SYNC, dron_id],
+                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                            start_new_session=True)
+    threading.Thread(target=proc.wait, daemon=True).start()
+    return jsonify({"ok": True, "mensaje": "Sincronización lanzada"}), 202
+
+
+@app.route("/api/sync/<dron_id>", methods=["GET"])
+def estado_sync(dron_id):
+    """Estado de la última sincronización (lo consulta la PWA cada pocos segundos)."""
+    if dron_id not in DRONES_VALIDOS:
+        return jsonify({"ok": False, "error": f"dron_id no valido: {dron_id}"}), 400
+    estado = _leer_estado_sync(dron_id)
+    if estado is None:
+        return jsonify({"ok": True, "estado": None})
+    return jsonify({"ok": True, "estado": estado})
 
 # =====================================================================
 #  ARRANQUE
